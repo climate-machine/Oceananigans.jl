@@ -35,3 +35,6 @@ docs/src/generated
 
 # MacOS stuff
 *.DS_Store
+
+# Slurm stuff
+core.*
