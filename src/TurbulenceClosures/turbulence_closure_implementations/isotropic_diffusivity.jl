@@ -40,7 +40,17 @@ function with_tracers(tracers, closure::IsotropicDiffusivity)
     return IsotropicDiffusivity(closure.ν, κ)
 end
 
-calculate_diffusivities!(K, arch, grid, closure::IsotropicDiffusivity, args...) = nothing
+# Support for ComputedField diffusivities
+function calculate_diffusivities!(K, arch, grid, closure::IsotropicDiffusivity, args...)
+
+    compute!(closure.ν)
+
+    for κ in closure.κ
+        compute!(κ)
+    end
+
+    return nothing
+end
 
 @inline function ∇_κ_∇c(i, j, k, grid, clock, closure::IsotropicDiffusivity,
                         c, ::Val{tracer_index}, args...) where tracer_index

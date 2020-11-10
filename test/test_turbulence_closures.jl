@@ -1,4 +1,5 @@
 using Oceananigans.Diagnostics
+using Oceananigans.Grids: total_size
 
 for closure in closures
     @eval begin
@@ -120,6 +121,28 @@ function time_step_with_variable_isotropic_diffusivity(arch)
     return true
 end
 
+function time_step_with_field_isotropic_diffusivity(arch)
+
+    grid = RegularCartesianGrid(size=(1, 1, 1), extent=(1, 2, 3))
+
+    tracer_names = (:T, :S, :c)
+    u, v, w = velocities = VelocityFields(arch, grid)
+    T, S, c = tracers = TracerFields(arch, grid, tracer_names)
+
+    fun_viscosity = ComputedField(u^2 * ∂z(T))
+    fun_diffusivity = ComputedField(S * c * sin(T))
+
+    closure = IsotropicDiffusivity(ν = fun_viscosity,
+                                   κ = fun_diffusivity)
+
+    model = IncompressibleModel(architecture=arch, grid=grid, closure=closure,
+                                velocities=velocities, tracers=tracers)
+
+    time_step!(model, 1, euler=true)
+
+    return true
+end
+
 function time_step_with_variable_anisotropic_diffusivity(arch)
 
     closure = AnisotropicDiffusivity(
@@ -200,6 +223,7 @@ end
         @info "  Testing time-stepping with presribed variable diffusivities..."
         for arch in archs
             @test time_step_with_variable_isotropic_diffusivity(arch)
+            @test time_step_with_field_isotropic_diffusivity(arch)
             @test time_step_with_variable_anisotropic_diffusivity(arch)
         end
     end

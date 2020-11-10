@@ -16,6 +16,10 @@
 
 @inline diffusive_flux_z(i, j, k, grid, clock, κ::Function, c) =
         diffusive_flux_z(i, j, k, grid, clock, κ(xnode(Cell, i, grid), ynode(Cell, j, grid), znode(Face, k, grid), clock.time), c)
+
+@inline diffusive_flux_x(i, j, k, grid, clock, κ::AbstractField, c) = ℑxᶠᵃᵃ(i, j, k, grid, κ) * Axᵃᵃᶠ(i, j, k, grid) * ∂xᶠᵃᵃ(i, j, k, grid, c)
+@inline diffusive_flux_y(i, j, k, grid, clock, κ::AbstractField, c) = ℑyᵃᶠᵃ(i, j, k, grid, κ) * Ayᵃᵃᶠ(i, j, k, grid) * ∂yᵃᶠᵃ(i, j, k, grid, c)
+@inline diffusive_flux_z(i, j, k, grid, clock, κ::AbstractField, c) = ℑzᵃᵃᶠ(i, j, k, grid, κ) * Azᵃᵃᵃ(i, j, k, grid) * ∂zᵃᵃᶠ(i, j, k, grid, c)
                      
 #####
 ##### Laplacian diffusion operator
