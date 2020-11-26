@@ -302,7 +302,7 @@ version = "0.7.6"
 deps = ["Adapt", "CUDA", "Crayons", "Dates", "FFTW", "Glob", "InteractiveUtils", "JLD2", "KernelAbstractions", "LinearAlgebra", "Logging", "NCDatasets", "OffsetArrays", "OrderedCollections", "Pkg", "Printf", "Random", "SafeTestsets", "SeawaterPolynomials", "StaticArrays", "Statistics"]
 path = ".."
 uuid = "9e8cae18-63c1-5223-a75c-80ca9d6e9a09"
-version = "0.44.1"
+version = "0.44.2"
 
 [[OffsetArrays]]
 deps = ["Adapt"]
