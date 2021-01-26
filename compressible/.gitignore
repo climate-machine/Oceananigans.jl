@@ -1,0 +1,36 @@
+# Julia stuff
+*.jl.cov
+*.jl.*.cov
+*.jl.*.mem
+deps/deps.jl
+
+# Swap files.
+*.swp
+*~
+
+# Documenter.jl and MkDocs
+docs/build
+docs/site
+
+# Jupyter Lab stuff and notebooks
+*.ipynb
+.ipynb_checkpoints
+
+# MacOS stuff
+*.DS_Store
+
+# Latex compiler output
+notes/*.aux
+notes/*.log
+notes/*.gz
+
+# Various output
+frames
+*.png
+*.gif
+*.mp4
+*.nc
+*.jld2
+
+# Local development packages
+dev
