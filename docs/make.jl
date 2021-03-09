@@ -33,7 +33,8 @@ examples = [
     "ocean_wind_mixing_and_convection.jl",
     "langmuir_turbulence.jl",
     "eady_turbulence.jl",
-    "kelvin_helmholtz_instability.jl"
+    "kelvin_helmholtz_instability.jl",
+    "hello_ocean.jl"
 ]
 
 for example in examples
