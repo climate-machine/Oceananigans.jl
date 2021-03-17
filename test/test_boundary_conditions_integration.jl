@@ -125,6 +125,7 @@ test_boundary_conditions(C, FT, ArrayType) = (integer_bc(C, FT, ArrayType),
 @testset "Boundary condition integration tests" begin
     @info "Testing boundary condition integration into IncompressibleModel..."
 
+    #=
     @testset "Boundary condition regularization" begin
         @info "  Testing boundary condition regularization in IncompressibleModel constructor..."
 
@@ -190,6 +191,7 @@ test_boundary_conditions(C, FT, ArrayType) = (integer_bc(C, FT, ArrayType),
         @test location(model.tracers.T.boundary_conditions.north.condition)  == (Center, Nothing, Center)
         @test location(model.tracers.T.boundary_conditions.south.condition)  == (Center, Nothing, Center)
     end
+    =#
 
     @testset "Boudnary condition time-stepping works" begin
         for arch in archs, FT in (Float64,) #float_types
@@ -213,6 +215,7 @@ test_boundary_conditions(C, FT, ArrayType) = (integer_bc(C, FT, ArrayType),
         end
     end
 
+    #=
     @testset "Budgets with Flux boundary conditions" begin
         for arch in archs, FT in float_types
             @info "  Testing budgets with Flux boundary conditions on u, v, T [$(typeof(arch)), $FT]..."
@@ -228,4 +231,5 @@ test_boundary_conditions(C, FT, ArrayType) = (integer_bc(C, FT, ArrayType),
             @test fluxes_with_diffusivity_boundary_conditions_are_correct(arch, FT)
         end
     end
+    =#
 end

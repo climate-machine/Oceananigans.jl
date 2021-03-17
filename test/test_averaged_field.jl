@@ -27,10 +27,10 @@ using Oceananigans.Grids: halo_size
 
                 # Note: halo regions must be *filled* prior to computing an average
                 # if the average within halo regions is to be correct.
-                fill_halo_regions!(T, arch)
+                fill_halo_regions!(T)
                 @compute T̅ = AveragedField(T, dims=(1, 2))
 
-                fill_halo_regions!(T, arch)
+                fill_halo_regions!(T)
                 @compute T̂ = AveragedField(T, dims=1)
 
                 @compute w̃ = AveragedField(w, dims=(1, 2, 3))

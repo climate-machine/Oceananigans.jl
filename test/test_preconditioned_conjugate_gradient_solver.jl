@@ -39,7 +39,7 @@ function run_pcg_solver_tests(arch)
     function Amatrix_function!(result, x, arch, grid, bcs; args...)
         event = launch!(arch, grid, :xyz, ∇²!, grid, x, result, dependencies=Event(device(arch)))
         wait(device(arch), event)
-        fill_halo_regions!(result, bcs, arch, grid)
+        fill_halo_regions!(result, bcs, grid)
         return nothing
     end
 
@@ -55,13 +55,13 @@ function run_pcg_solver_tests(arch)
     jmid = Int(floor(grid.Ny / 2)) + 1
     CUDA.@allowscalar u.data[imid, jmid, 1] = 1
 
-    fill_halo_regions!(u.data, u.boundary_conditions, arch, grid)
+    fill_halo_regions!(u.data, u.boundary_conditions, grid)
 
     event = launch!(arch, grid, :xyz, divergence!, grid, u.data, v.data, w.data, RHS.data,
                     dependencies=Event(device(arch)))
     wait(device(arch), event)
 
-    fill_halo_regions!(RHS.data, RHS.boundary_conditions, arch, grid)
+    fill_halo_regions!(RHS.data, RHS.boundary_conditions, grid)
 
     pcg_params = (
         PCmatrix_function = nothing,
@@ -83,7 +83,7 @@ function run_pcg_solver_tests(arch)
     event = launch!(arch, grid, :xyz, ∇²!, grid, ϕ.data, result, dependencies=Event(device(arch)))
     wait(device(arch), event)
 
-    fill_halo_regions!(result, ϕ.boundary_conditions, arch, grid)
+    fill_halo_regions!(result, ϕ.boundary_conditions, grid)
 
     CUDA.@allowscalar begin
         @test abs(minimum(result[1:Nx, 1:Ny, 1] .- RHS.data[1:Nx, 1:Ny, 1])) < 1e-12

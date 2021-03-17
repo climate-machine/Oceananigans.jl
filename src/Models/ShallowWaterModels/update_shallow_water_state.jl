@@ -11,7 +11,6 @@ function update_state!(model::ShallowWaterModel)
 
     # Fill halos for velocities and tracers
     fill_halo_regions!(merge(model.solution, model.tracers),
-                       model.architecture,
                        model.clock,
                        fields(model))
 

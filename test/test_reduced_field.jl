@@ -65,7 +65,7 @@ end
                 set!(reduced_field, A)
                 @test reduced_field[1, 1, 1] == A[1, 1, 1]
 
-                fill_halo_regions!(reduced_field, arch)
+                fill_halo_regions!(reduced_field)
 
                 # No-flux boundary conditions at top and bottom
                 @test reduced_field[1, 1, 0] == A[1, 1, 1]

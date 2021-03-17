@@ -1,3 +1,5 @@
+using Oceananigans.Architectures: architecture
+
 #####
 ##### General halo filling functions
 #####
@@ -5,25 +7,27 @@
 fill_halo_regions!(::Nothing, args...) = []
 
 """
-    fill_halo_regions!(fields, arch)
+    fill_halo_regions!(fields)
 
 Fill halo regions for each field in the tuple `fields` according to their boundary
 conditions, possibly recursing into `fields` if it is a nested tuple-of-tuples.
 """
-function fill_halo_regions!(fields::Union{Tuple, NamedTuple}, arch, args...)
+function fill_halo_regions!(fields::Union{Tuple, NamedTuple}, args...)
 
     for field in fields
-        fill_halo_regions!(field, arch, args...)
+        fill_halo_regions!(field, args...)
     end
 
     return nothing
 end
 
-fill_halo_regions!(field, arch, args...) = fill_halo_regions!(field.data, field.boundary_conditions, arch, field.grid, args...)
+fill_halo_regions!(field, args...) =
+    fill_halo_regions!(field.data, field.boundary_conditions, field.grid, args...)
 
 "Fill halo regions in x, y, and z for a given field."
-function fill_halo_regions!(c::AbstractArray, fieldbcs, arch, grid, args...; kwargs...)
+function fill_halo_regions!(c::AbstractArray, fieldbcs, grid, args...; kwargs...)
 
+    arch = architecture(c)
     barrier = Event(device(arch))
 
       west_event =   fill_west_halo!(c, fieldbcs.west,   arch, barrier, grid, args...; kwargs...)

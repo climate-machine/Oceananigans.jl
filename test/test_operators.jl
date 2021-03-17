@@ -138,7 +138,7 @@ end
 
         A3 = OffsetArray(zeros(Tx, Ty, Tz), 1-Hx:Nx+Hx, 1-Hy:Ny+Hy, 1-Hz:Nz+Hz)
         @. @views A3[1:Nx, 1:Ny, 1:Nz] = rand()
-        fill_halo_regions!(A3, TracerBoundaryConditions(grid), arch, grid)
+        fill_halo_regions!(A3, TracerBoundaryConditions(grid), grid)
 
         # A yz-slice with Nx==1.
         A2yz = OffsetArray(zeros(1+2Hx, Ty, Tz), 1-Hx:1+Hx, 1-Hy:Ny+Hy, 1-Hz:Nz+Hz)

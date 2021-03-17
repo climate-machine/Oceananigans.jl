@@ -124,7 +124,7 @@ function compute!(kcf::KernelComputedField{X, Y, Z}) where {X, Y, Z}
 
     wait(device(arch), event)
 
-    fill_halo_regions!(kcf, arch)
+    fill_halo_regions!(kcf)
 
     return nothing
 end
