@@ -41,6 +41,7 @@ using Statistics: mean
 using LinearAlgebra: norm
 using NCDatasets: Dataset
 using KernelAbstractions: @kernel, @index, Event
+using DataDeps
 
 import Oceananigans.Fields: interior
 import Oceananigans.Utils: launch!, datatuple
@@ -96,9 +97,9 @@ group = get(ENV, "TEST_GROUP", :all) |> Symbol
 
     if group == :solvers || group == :all
         @testset "Solvers" begin
-            include("test_solvers.jl")
-            include("test_poisson_solvers.jl")
-            include("test_preconditioned_conjugate_gradient_solver.jl")
+            ## include("test_solvers.jl")
+            ## include("test_poisson_solvers.jl")
+            ## include("test_preconditioned_conjugate_gradient_solver.jl")
             include("test_implicit_free_surface_solver.jl")
         end
     end

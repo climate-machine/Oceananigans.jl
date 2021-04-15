@@ -37,8 +37,8 @@ function FreeSurface(free_surface::ImplicitFreeSurface{Nothing}, velocities, arc
     vertically_integrated_lateral_face_areas = (Ax = Ax_zintegral, Ay=Ay_zintegral)
     compute_vertically_integrated_lateral_face_areas!(vertically_integrated_lateral_face_areas, grid, arch)
 
-    ## implicit_step_solver = ImplicitFreeSurfaceSolver(arch, η, vertically_integrated_lateral_face_areas; maxit=100)
-    implicit_step_solver = ImplicitFreeSurfaceSolver(arch, η, vertically_integrated_lateral_face_areas)
+    implicit_step_solver = ImplicitFreeSurfaceSolver(arch, η, vertically_integrated_lateral_face_areas; maxit=100)
+    ## implicit_step_solver = ImplicitFreeSurfaceSolver(arch, η, vertically_integrated_lateral_face_areas)
 
     return ImplicitFreeSurface(η, g, 
                                barotropic_volume_flux, 

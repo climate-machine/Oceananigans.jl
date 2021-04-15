@@ -31,13 +31,21 @@ function PreconditionedConjugateGradientSolver(; arch = arch, grid = nothing, bo
         tf = CenterField(arch, grid)
     end
 
-    a_res = similar(tf) #.data)
-    q     = similar(tf) #.data)
-    p     = similar(tf) #.data)
-    z     = similar(tf) #.data)
-    r     = similar(tf) #.data)
-    RHS   = similar(tf) #.data)
-    x     = similar(tf) #.data)
+    ## a_res = similar(tf) #.data)
+    ## q     = similar(tf) #.data)
+    ## p     = similar(tf) #.data)
+    ## z     = similar(tf) #.data)
+    ## r     = similar(tf) #.data)
+    ## RHS   = similar(tf) #.data)
+    ## x     = similar(tf) #.data)
+    a_res = similar(interior(tf) ) #.data)
+    q     = similar(interior(tf) ) #.data)
+    p     = similar(interior(tf) ) #.data)
+    z     = similar(interior(tf) ) #.data)
+    r     = similar(interior(tf) ) #.data)
+    RHS   = similar(interior(tf) ) #.data)
+    x     = similar(interior(tf) ) #.data)
+
 
     parent(a_res) .= 0
 
@@ -50,12 +58,17 @@ function PreconditionedConjugateGradientSolver(; arch = arch, grid = nothing, bo
 
     M(x; args...) = PCmatrix_function(x; args...)
 
-    ii = interior_parent_indices(location(tf, 1), topology(grid, 1), grid.Nx, grid.Hx)
-    ji = interior_parent_indices(location(tf, 2), topology(grid, 2), grid.Ny, grid.Hy)
-    ki = interior_parent_indices(location(tf, 3), topology(grid, 3), grid.Nz, grid.Hz)
+    dr=range( 1,length=ndims( interior(tf) ) )
+    ininds=map(i->range(1,length=size( interior(tf) ,i)),dr)
 
-    dotproduct(x, y) = mapreduce((x, y) -> x * y, +, view(x, ii, ji, ki), view(y, ii, ji, ki))
-    norm(x) = sqrt(mapreduce(x -> x * x, +, view(x, ii, ji, ki)))
+    ## ii = interior_parent_indices(location(tf, 1), topology(grid, 1), grid.Nx, grid.Hx)
+    ## ji = interior_parent_indices(location(tf, 2), topology(grid, 2), grid.Ny, grid.Hy)
+    ## ki = interior_parent_indices(location(tf, 3), topology(grid, 3), grid.Nz, grid.Hz)
+
+    # view(interior(η),ininds...)
+
+    dotproduct(x, y) = mapreduce((x, y) -> x * y, +, view(x, ininds...), view(y, ininds...))
+    norm(x) = sqrt(mapreduce(x -> x * x, +, view(x, ininds...)))
 
     Amatrix_function = parameters.Amatrix_function
     A(x; args...) = (Amatrix_function(a_res, x, arch, grid, bcs; args...); return a_res)

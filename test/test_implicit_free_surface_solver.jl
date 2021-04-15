@@ -115,5 +115,18 @@ end
                             topology = (Bounded, Periodic, Bounded))
         @test run_implicit_free_surface_solver_tests(arch, grid)
 
+        ## Lets try a cube!!
+        ENV["DATADEPS_ALWAYS_ACCEPT"] = "true"
+        dd = DataDep("cubed_sphere_32_grid",
+                     "Conformal cubed sphere grid with 32×32 grid points on each face",
+                     "https://github.com/CliMA/OceananigansArtifacts.jl/raw/main/cubed_sphere_grids/cubed_sphere_32_grid.jld2",
+                     "b1dafe4f9142c59a2166458a2def743cd45b20a4ed3a1ae84ad3a530e1eff538" # sha256sum
+                    )
+        DataDeps.register(dd)
+        cs32_filepath = datadep"cubed_sphere_32_grid/cubed_sphere_32_grid.jld2"
+        H = 4kilometers
+        grid = ConformalCubedSphereGrid(cs32_filepath, Nz=1, z=(-H, 0))
+
+
     end
 end
