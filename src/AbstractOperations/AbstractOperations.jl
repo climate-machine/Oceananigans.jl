@@ -32,6 +32,9 @@ const AF = AbstractField
 # We (informally) require that all field-like objects define `parent`:
 Base.parent(op::AbstractOperation) = op
 
+# Abstract operations have no data, but can be indexed like an array so just return itself.
+data(op::AbstractOperation) = op
+
 # AbstractOperation macros add their associated functions to this list
 const operators = Set()
 
