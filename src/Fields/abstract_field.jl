@@ -1,11 +1,14 @@
 using Base: @propagate_inbounds
+using Statistics
+
 using CUDA
 using Adapt
 using OffsetArrays
-using Statistics
 
 using Oceananigans.Architectures
 using Oceananigans.Utils
+
+using DimensionalData: AbstractDimArray
 using Oceananigans.Grids: interior_indices, interior_parent_indices
 
 import Base: minimum, maximum, extrema
@@ -21,23 +24,31 @@ const ArchOrNothing = Union{AbstractArchitecture, Nothing}
 const GridOrNothing = Union{AbstractGrid, Nothing}
 
 """
-    AbstractField{X, Y, Z, A, G, T, N}
+    AbstractField{X, Y, Z, A, G, T, N, D}
 
 Abstract supertype for fields located at `(X, Y, Z)` on architecture `A`
-and defined on a grid `G` with eltype `T` and `N` dimensions.
+and defined on a grid `G` with data `D` of eltype `T` and `N` dimensions.
 """
-abstract type AbstractField{X, Y, Z, A <: ArchOrNothing, G <: GridOrNothing, T, N} <: AbstractArray{T, N} end
+abstract type AbstractField{X, Y, Z, A <: ArchOrNothing, G <: GridOrNothing, T, N, D} <: AbstractDimArray{T, N, Tuple{}, D} end
 
 """
-    AbstractDataField{X, Y, Z, A, G, T, N}
+    AbstractDataField{X, Y, Z, A, G, T, N, D}
 
 Abstract supertype for fields with concrete data in settable underlying arrays,
-located at `(X, Y, Z)` on architecture `A` and defined on a grid `G` with eltype `T`
-and `N` dimensions.
+located at `(X, Y, Z)` on architecture `A` and defined on a grid `G` with data `D`
+of eltype `T` and `N` dimensions.
 """
-abstract type AbstractDataField{X, Y, Z, A, G, T, N} <: AbstractField{X, Y, Z, A, G, T, N} end
+abstract type AbstractDataField{X, Y, Z, A, G, T, N, D} <: AbstractField{X, Y, Z, A, G, T, N, D} end
 
 Base.IndexStyle(::AbstractField) = IndexCartesian()
+Base.axes(field::AbstractField) = map(Base.oneto, size(field))
+
+# We want iterate to work like it does for AbstractArray, not like AbstractDimArray.
+function Base.iterate(A::AbstractField, state=(eachindex(A),))
+    y = iterate(state...)
+    y === nothing && return nothing
+    A[y[1]], (state[1], Base.tail(y)...)
+end
 
 function validate_field_data(X, Y, Z, data, grid)
     Tx, Ty, Tz = total_size((X, Y, Z), grid)
@@ -187,22 +198,22 @@ Base.fill!(f::AbstractDataField, val) = fill!(parent(f), val)
 # Don't use axes(f) to checkbounds; use axes(f.data)
 Base.checkbounds(f::AbstractField, I...) = Base.checkbounds(f.data, I...)
 
-@propagate_inbounds Base.getindex(f::AbstractDataField, inds...) = getindex(f.data, inds...)
+@propagate_inbounds Base.getindex(f::AbstractDataField, inds::Integer...) = getindex(f.data, inds...)
 
 # Linear indexing
-@propagate_inbounds Base.getindex(f::AbstractDataField, i::Int)  = parent(f)[i]
+@propagate_inbounds Base.getindex(f::AbstractDataField, i::Integer)  = parent(f)[i]
 
 #####
 ##### setindex
 #####
 
-@propagate_inbounds function Base.setindex!(f::AbstractDataField, val, i, j, k)
+@propagate_inbounds function Base.setindex!(f::AbstractDataField, val, i::Integer, j::Integer, k::Integer)
     f.data[i, j, k] = val
     return f
 end
 
 # Linear indexing
-@propagate_inbounds function Base.setindex!(f::AbstractDataField, val, i::Int)
+@propagate_inbounds function Base.setindex!(f::AbstractDataField, val, i::Integer)
     parent(f)[i] = val
     return f
 end

@@ -14,7 +14,7 @@ struct CubedSphereFaces{E, F}
     faces :: F
 end
 
-@inline Base.getindex(f::CubedSphereFaces, i::Int) = @inbounds f.faces[i]
+@inline Base.getindex(f::CubedSphereFaces, i::Integer) = @inbounds f.faces[i]
 
 #####
 ##### Dispatch the world

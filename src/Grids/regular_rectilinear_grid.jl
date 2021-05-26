@@ -80,9 +80,9 @@ Make sure to specify the desired `FT` if not using `Float64`.
 Grid properties
 ===============
 
-- `(Nx, Ny, Nz)::Int`: Number of physical points in the (x, y, z)-direction
+- `(Nx, Ny, Nz)::Integer`: Number of physical points in the (x, y, z)-direction
 
-- `(Hx, Hy, Hz)::Int`: Number of halo points in the (x, y, z)-direction
+- `(Hx, Hy, Hz)::Integer`: Number of halo points in the (x, y, z)-direction
 
 - `(Lx, Ly, Lz)::FT`: Physical extent of the grid in the (x, y, z)-direction
 

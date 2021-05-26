@@ -34,6 +34,7 @@ include("field_slicer.jl")
 include("show_fields.jl")
 include("broadcasting_abstract_fields.jl")
 include("mapreduce_abstract_fields.jl")
+include("field_dimensions.jl")
 
 # Fallback: cannot infer boundary conditions.
 boundary_conditions(field) = nothing

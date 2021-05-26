@@ -1,6 +1,6 @@
 using Adapt
 
-struct Field{X, Y, Z, A, D, G, T, B} <: AbstractDataField{X, Y, Z, A, G, T, 3}
+struct Field{X, Y, Z, A, D, G, T, B} <: AbstractDataField{X, Y, Z, A, G, T, 3, D}
                    data :: D
            architecture :: A
                    grid :: G

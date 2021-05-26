@@ -103,11 +103,11 @@ end
 checkpoint_superprefix(prefix) = prefix * "_iteration"
 
 """
-    checkpoint_path(iteration::Int, c::Checkpointer)
+    checkpoint_path(iteration::Integer, c::Checkpointer)
 
 Returns the path to the `c`heckpointer file associated with model `iteration`.
 """
-checkpoint_path(iteration::Int, c::Checkpointer) =
+checkpoint_path(iteration::Integer, c::Checkpointer) =
     joinpath(c.dir, string(checkpoint_superprefix(c.prefix), iteration, ".jld2"))
 
 # This is the default name used in the simulation.output_writers ordered dict.

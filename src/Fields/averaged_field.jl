@@ -3,7 +3,7 @@ using Statistics
 using Oceananigans.Grids
 using Oceananigans.Grids: interior_parent_indices
 
-struct AveragedField{X, Y, Z, S, A, D, G, T, N, O} <: AbstractReducedField{X, Y, Z, A, G, T, N}
+struct AveragedField{X, Y, Z, S, A, D, G, T, N, O} <: AbstractReducedField{X, Y, Z, A, G, T, N, D}
             data :: D
     architecture :: A
             grid :: G

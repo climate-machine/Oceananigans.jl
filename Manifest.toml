@@ -77,6 +77,12 @@ version = "3.30.0"
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 
+[[ConstructionBase]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "1dc43957fb9a1574fa1b7a449e101bd1fd3a9fb7"
+uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
+version = "1.2.1"
+
 [[Crayons]]
 git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
@@ -117,6 +123,12 @@ deps = ["NaNMath", "Random", "SpecialFunctions"]
 git-tree-sha1 = "214c3fcac57755cfda163d91c58893a8723f93e9"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
 version = "1.0.2"
+
+[[DimensionalData]]
+deps = ["Adapt", "ConstructionBase", "Dates", "LinearAlgebra", "RecipesBase", "SparseArrays", "Statistics", "Tables"]
+git-tree-sha1 = "7a6f530888afe9ba44714d9fa959e1faf37392a4"
+uuid = "0703355e-b756-11e9-17c0-8b28908087d0"
+version = "0.17.4"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -419,6 +431,11 @@ deps = ["Random", "Requires"]
 git-tree-sha1 = "441e6fc35597524ada7f85e13df1f4e10137d16f"
 uuid = "e6cf234a-135c-5ec9-84dd-332b85af5143"
 version = "1.4.0"
+
+[[RecipesBase]]
+git-tree-sha1 = "b3fb709f3c97bfc6e948be68beeecb55a0b340ae"
+uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+version = "1.1.1"
 
 [[Reexport]]
 git-tree-sha1 = "57d8440b0c7d98fc4f889e478e80f268d534c9d5"

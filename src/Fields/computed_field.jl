@@ -4,7 +4,7 @@ using KernelAbstractions: @kernel, @index, Event
 using Oceananigans.Grids
 using Oceananigans.BoundaryConditions: fill_halo_regions!
 
-struct ComputedField{X, Y, Z, S, O, A, D, G, T, C} <: AbstractDataField{X, Y, Z, A, G, T, 3}
+struct ComputedField{X, Y, Z, S, O, A, D, G, T, C} <: AbstractDataField{X, Y, Z, A, G, T, 3, D}
                    data :: D
            architecture :: A
                    grid :: G

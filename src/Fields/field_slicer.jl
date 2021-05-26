@@ -40,10 +40,10 @@ num2int(i::Number) = Int(i)
 #####
 
 # Integer slice
-parent_slice_indices(loc, topo, N, H, i::Int, with_halos) = UnitRange(i + H, i + H)
+parent_slice_indices(loc, topo, N, H, i::Integer, with_halos) = UnitRange(i + H, i + H)
 
 # Colon slicing
-parent_slice_indices(loc, topo, N, H, 
+parent_slice_indices(loc, topo, N, H,
                      ::Colon, with_halos) = with_halos ? UnitRange(1, N+2H) : UnitRange(H+1, H+N)
 
 parent_slice_indices(::Type{Face}, ::Type{Bounded}, N, H,
@@ -52,7 +52,7 @@ parent_slice_indices(::Type{Face}, ::Type{Bounded}, N, H,
 # Slicing along reduced dimensions
 parent_slice_indices(::Type{Nothing}, loc, N, H, ::Colon, with_halos) = 1:1
 parent_slice_indices(::Type{Nothing}, loc, N, H, ::AbstractRange, with_halos) = 1:1
-parent_slice_indices(::Type{Nothing}, loc, N, H, ::Int, with_halos) = 1:1
+parent_slice_indices(::Type{Nothing}, loc, N, H, ::Integer, with_halos) = 1:1
 
 # Safe slice ranges without halos
 right_parent_index_without_halos(loc, topo, N, H, right) = min(H + N, right + H)

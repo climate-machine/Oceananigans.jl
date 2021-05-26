@@ -114,7 +114,7 @@ Possible values for `pickup` are:
     * `pickup=true` will pick a simulation up from the latest checkpoint associated with
       the `Checkpointer` in simulation.output_writers`.
 
-    * `pickup=iteration::Int` will pick a simulation up from the checkpointed file associated
+    * `pickup=iteration::Integer` will pick a simulation up from the checkpointed file associated
        with `iteration` and the `Checkpointer` in simulation.output_writers`.
 
     * `pickup=filepath::String` will pick a simulation up from checkpointer data in `filepath`.

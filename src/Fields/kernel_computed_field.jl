@@ -2,7 +2,7 @@ using Oceananigans: AbstractModel
 using Oceananigans.Grids
 using Oceananigans.Utils: tupleit
 
-struct KernelComputedField{X, Y, Z, A, S, D, G, T, K, B, F, P} <: AbstractDataField{X, Y, Z, A, G, T, 3}
+struct KernelComputedField{X, Y, Z, A, S, D, G, T, K, B, F, P} <: AbstractDataField{X, Y, Z, A, G, T, 3, D}
                      data :: D
              architecture :: A
                      grid :: G

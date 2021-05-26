@@ -6,7 +6,7 @@ import Oceananigans.BoundaryConditions: fill_halo_regions!
 ##### AbstractReducedField stuff
 #####
 
-abstract type AbstractReducedField{X, Y, Z, A, G, T, N} <: AbstractDataField{X, Y, Z, A, G, T, 3} end
+abstract type AbstractReducedField{X, Y, Z, A, G, T, N, D} <: AbstractDataField{X, Y, Z, A, G, T, 3, D} end
 
 const ARF = AbstractReducedField
 
@@ -45,7 +45,7 @@ end
 ##### Concrete ReducedField
 #####
 
-struct ReducedField{X, Y, Z, A, D, G, T, N, B} <: AbstractReducedField{X, Y, Z, A, G, T, N}
+struct ReducedField{X, Y, Z, A, D, G, T, N, B} <: AbstractReducedField{X, Y, Z, A, G, T, N, D}
                    data :: D
            architecture :: A
                    grid :: G

@@ -15,9 +15,9 @@ for `N=8` and `N=9` respectively.
 
 See equation (20) of [Makhoul80](@cite).
 """
-@inline permute_index(i, N)::Int = ifelse(isodd(i),
-                                          Base.unsafe_trunc(Int, i/2) + 1,
-                                          N - Base.unsafe_trunc(Int, (i-1)/2))
+@inline permute_index(i, N)::Integer = ifelse(isodd(i),
+                                              Base.unsafe_trunc(Int, i/2) + 1,
+                                              N - Base.unsafe_trunc(Int, (i-1)/2))
 
 """
     unpermute_index(i, N)
