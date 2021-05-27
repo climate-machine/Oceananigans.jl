@@ -1,12 +1,20 @@
+struct FieldDataset{F, M, P}
+      fields :: F
+    metadata :: M
+    filepath :: P
+end
+
 """
-    FieldTimeSeries(filepath, name; architecture=CPU(), backend=InMemory())
+    FieldDataset(filepath; architecture=CPU(), backend=InMemory(), metadata_paths=["metadata"])
 
 Returns a `Dict` containing a `FieldTimeSeries` for each field in the JLD2 file located at `filepath`.
 Note that model output must have been saved with halos. The `InMemory` backend will store the data
 fully in memory as a 4D multi-dimensional array while the `OnDisk` backend will lazily load field time
 snapshots when the `FieldTimeSeries` is indexed linearly.
+
+`metadata_paths` is a list of JLD2 paths to look for metadata. By default it looks in `file["metadata"]`.
 """
-function FieldDataset(filepath; architecture=CPU(), backend=InMemory())
+function FieldDataset(filepath; architecture=CPU(), backend=InMemory(), metadata_paths=["metadata"])
     file = jldopen(filepath)
 
     field_names = keys(file["timeseries"])
@@ -17,7 +25,13 @@ function FieldDataset(filepath; architecture=CPU(), backend=InMemory())
         for name in field_names
     )
 
+    metadata = Dict(
+        k => file["$mp/$k"]
+        for mp in metadata_paths
+        for k in keys(file["$mp"])
+    )
+
     close(file)
 
-    return ds
+    return FieldDataset(ds, metadata, abspath(filepath))
 end
