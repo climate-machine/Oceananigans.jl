@@ -35,3 +35,6 @@ function FieldDataset(filepath; architecture=CPU(), backend=InMemory(), metadata
 
     return FieldDataset(ds, metadata, abspath(filepath))
 end
+
+Base.show(io::IO, fds::FieldDataset) where {X, Y, Z, K, A} =
+    print(io, "FieldDataset with $(length(fds.fields)) fields and $(length(fds.metadata)) metadata entries.")
