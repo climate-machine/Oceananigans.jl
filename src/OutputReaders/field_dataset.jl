@@ -14,14 +14,14 @@ snapshots when the `FieldTimeSeries` is indexed linearly.
 
 `metadata_paths` is a list of JLD2 paths to look for metadata. By default it looks in `file["metadata"]`.
 """
-function FieldDataset(filepath; architecture=CPU(), backend=InMemory(), metadata_paths=["metadata"])
+function FieldDataset(filepath; architecture=CPU(), ArrayType=array_type(architecture), backend=InMemory(), metadata_paths=["metadata"])
     file = jldopen(filepath)
 
     field_names = keys(file["timeseries"])
     filter!(k -> k != "t", field_names)  # Time is not a field.
 
     ds = Dict{String, FieldTimeSeries}(
-        name => FieldTimeSeries(filepath, name; architecture, backend)
+        name => FieldTimeSeries(filepath, name; architecture, ArrayType, backend)
         for name in field_names
     )
 
