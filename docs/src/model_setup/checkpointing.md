@@ -1,11 +1,11 @@
 # Checkpointing
 
-A checkpointer can be used to serialize the entire model state to a file from which the model can be restored at any
-time. This is useful if you'd like to periodically checkpoint when running long simulations in case of crashes or
+A checkpointer can be used to save the model state to a file from which a model or simulation can be picked up from
+at any time. This is useful if you'd like to periodically checkpoint when running long simulations in case of crashes or
 cluster time limits, but also if you'd like to restore from a checkpoint and try out multiple scenarios.
 
-For example, to periodically checkpoint the model state to disk every 1,000,000 seconds of simulation time to files of
-the form `model_checkpoint_iteration12500.jld2` where `12500` is the iteration number (automatically filled in)
+For example, to periodically checkpoint the model state to disk every 5 years of simulation time to files with names
+like `model_checkpoint_iteration12500.jld2` where `12500` is the iteration number (automatically filled in), use
 
 ```@meta
 DocTestSetup = quote
@@ -25,23 +25,37 @@ Checkpointer{TimeInterval, Vector{Symbol}}(TimeInterval(1.5768e8, 0.0), ".", "mo
 The default options should provide checkpoint files that are easy to restore from in most cases. For more advanced
 options and features, see [`Checkpointer`](@ref).
 
-## Restoring from a checkpoint file
+## Picking up a simulation from a checkpoint
 
-To restore the model from a checkpoint file, for example `model_checkpoint_12345.jld2`, simply call
+To restore the model from a specific checkpoint file, for example `model_checkpoint_12345.jld2`, simply call
 
 ```julia
-model = restore_from_checkpoint("model_checkpoint_12345.jld2")
+set!(model, "model_checkpoint_12345.jld2")
 ```
 
-which will create a new model object that is identical to the one that was serialized to disk. You can continue time
-stepping after restoring from a checkpoint.
+that sets all the checkpointed data in `model_checkpoint_12345.jld2` to `model`, including tendencies, and synchronizes the
+model clock and iteration with the checkpointed clock and iteration.
 
-You can pass additional parameters to the `Model` constructor. See [`restore_from_checkpoint`](@ref) for more
-information.
+To automatically pickup from a checkpoint, you can use the `pickup` keyword argument for `run!`. To pickup from the latest
+checkpoint, use
 
-## Restoring with functions
+```julia
+run!(simulation, pickup=true)
+```
 
-JLD2 cannot serialize functions to disk. so if you used forcing functions, boundary conditions containing functions, or
-the model included references to functions then they will not be serialized to the checkpoint file. When restoring from
-a checkpoint file, any model property that contained functions must be manually restored via keyword arguments to
-[`restore_from_checkpoint`](@ref).
+or if you want to pickup from a specific iteration number, use
+
+```julia
+run!(simulation, pickup=n)
+```
+
+where `n` is an integer that refers to an iteration number of a checkpointer file to be "picked up" and run from,
+or if you want to pickup from a specific checkpoint file use
+
+```julia
+run!(simulation, pickup=filepath)
+```
+
+where `filepath` is a string that indicates the path to checkpoint data.
+
+Note that `simulation.output_writers` must include a `Checkpointer` for the `pickup` keyword argument to work.

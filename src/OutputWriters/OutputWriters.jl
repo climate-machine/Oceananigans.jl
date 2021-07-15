@@ -1,10 +1,9 @@
 module OutputWriters
 
-export
-    JLD2OutputWriter, NetCDFOutputWriter,
-    Checkpointer, restore_from_checkpoint,
-    WindowedTimeAverage,
-    TimeInterval, IterationInterval, WallTimeInterval, AveragedTimeInterval
+export JLD2OutputWriter, NetCDFOutputWriter
+export Checkpointer
+export WindowedTimeAverage
+export TimeInterval, IterationInterval, WallTimeInterval, AveragedTimeInterval
 
 using CUDA
 
