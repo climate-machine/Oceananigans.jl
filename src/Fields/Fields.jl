@@ -15,6 +15,7 @@ using Oceananigans.Grids
 using Oceananigans.BoundaryConditions
 
 include("abstract_field.jl")
+include("validate_field_boundary_conditions.jl")
 include("reduced_getindex_setindex.jl")
 include("field.jl")
 include("zero_field.jl")

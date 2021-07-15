@@ -1,24 +1,24 @@
 using Adapt
 
-struct Field{X, Y, Z, A, D, G, T, B} <: AbstractDataField{X, Y, Z, A, G, T, 3}
+struct Field{LX, LY, LZ, A, D, G, T, B} <: AbstractDataField{LX, LY, LZ, A, G, T, 3}
                    data :: D
            architecture :: A
                    grid :: G
     boundary_conditions :: B
 
-    function Field{X, Y, Z}(data::D, arch::A, grid::G, bcs::B) where {X, Y, Z, D, A, G, B}
+    function Field{LX, LY, LZ}(data::D, arch::A, grid::G, bcs::B) where {LX, LY, LZ, D, A, G, B}
         T = eltype(grid)
-        return new{X, Y, Z, A, D, G, T, B}(data, arch, grid, bcs)
+        return new{LX, LY, LZ, A, D, G, T, B}(data, arch, grid, bcs)
     end
 end
 
 """
-    Field(X, Y, Z, [arch = CPU()], grid,
-          [ bcs = FieldBoundaryConditions(grid, (X, Y, Z)),
-           data = new_data(eltype(grid), arch, grid, (X, Y, Z))])
+    Field(LX, LY, LZ, [arch = CPU()], grid,
+          [ bcs = FieldBoundaryConditions(grid, (LX, LY, LZ)),
+           data = new_data(eltype(grid), arch, grid, (LX, LY, LZ))])
 
 Construct a `Field` on `grid` with `data` on architecture `arch` with
-boundary conditions `bcs`. Each of `(X, Y, Z)` is either `Center` or `Face` and determines
+boundary conditions `bcs`. Each of `(LX, LY, LZ)` is either `Center` or `Face` and determines
 the field's location in `(x, y, z)`.
 
 Example
@@ -31,29 +31,30 @@ julia> ω = Field(Face, Face, Center, CPU(), RegularRectilinearGrid(size=(1, 1, 
 Field located at (Face, Face, Center)
 ├── data: OffsetArrays.OffsetArray{Float64, 3, Array{Float64, 3}}, size: (1, 1, 1)
 ├── grid: RegularRectilinearGrid{Float64, Periodic, Periodic, Bounded}(Nx=1, Ny=1, Nz=1)
-└── boundary conditions: x=(west=Periodic, east=Periodic), y=(south=Periodic, north=Periodic), z=(bottom=ZeroFlux, top=ZeroFlux)
+└── boundary conditions: x=(west=Periodic, east=Periodic), y=(south=Periodic, north=Periodic), z=(bottom=LZeroFlux, top=LZeroFlux)
 ```
 """
-function Field(X, Y, Z,
+function Field(LX, LY, LZ,
                arch::AbstractArchitecture,
                grid::AbstractGrid,
-               bcs = FieldBoundaryConditions(grid, (X, Y, Z)),
-               data = new_data(eltype(grid), arch, grid, (X, Y, Z)))
+               bcs = FieldBoundaryConditions(grid, (LX, LY, LZ)),
+               data = new_data(eltype(grid), arch, grid, (LX, LY, LZ)))
 
-    validate_field_data(X, Y, Z, data, grid)
+    validate_field_data(LX, LY, LZ, data, grid)
+    validate_field_boundary_conditions(bcs, grid, LX, LY, LZ)
 
-    return Field{X, Y, Z}(data, arch, grid, bcs)
+    return Field{LX, LY, LZ}(data, arch, grid, bcs)
 end
 
 # Default CPU architecture
-Field(X, Y, Z, grid::AbstractGrid, args...) = Field(X, Y, Z, CPU(), grid, args...)
+Field(LX, LY, LZ, grid::AbstractGrid, args...) = Field(LX, LY, LZ, CPU(), grid, args...)
 
 # Canonical `similar` for AbstractField (doesn't transfer boundary conditions)
-Base.similar(f::AbstractField{X, Y, Z, Arch}) where {X, Y, Z, Arch} = Field(X, Y, Z, Arch(), f.grid)
+Base.similar(f::AbstractField{LX, LY, LZ, Arch}) where {LX, LY, LZ, Arch} = Field(LX, LY, LZ, Arch(), f.grid)
 
 # Type "destantiation": convert Face() to Face and Center() to Center if needed.
-destantiate(X) = typeof(X)
-destantiate(X::DataType) = X
+destantiate(LX) = typeof(LX)
+destantiate(LX::DataType) = LX
 
 """
     Field(L::Tuple, arch, grid, data, bcs)
