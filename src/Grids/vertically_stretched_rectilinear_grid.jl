@@ -52,7 +52,7 @@ Keyword arguments
 
 - `topology`: A 3-tuple `(Tx, Ty, Tz)` specifying the topology of the domain.
               `Tz` must be `Bounded` for `VerticallyStretchedRectilinearGrid`.
-              `Tx` and `Ty` specify whether the `x`- and `y`- directions are
+              `Tx` and `Ty` specify whether the `x`- and `y`-` directions are
               `Periodic`, `Bounded`, or `Flat`. The topology `Flat` indicates that a model does
               not vary in that directions so that derivatives and interpolation are zero.
               The default is `topology=(Periodic, Periodic, Bounded)`.
@@ -73,7 +73,7 @@ Keyword arguments
 The physical extent of the domain can be specified via `x` and `y` keyword arguments
 indicating the left and right endpoints of each dimensions, e.g. `x=(-π, π)`.
 
-A grid topology may be specified via a tuple assigning one of `Periodic`, `Bounded`, and `Flat`
+A grid topology may be specified via a tuple assigning one of `Periodic`, `Bounded, and `Flat`
 to each dimension. By default, a horizontally periodic grid topology `(Periodic, Periodic, Bounded)`
 is assumed.
 
@@ -100,35 +100,6 @@ Grid properties
 - `(xᶜᵃᵃ, yᵃᶜᵃ, zᵃᵃᶜ)`: (x, y, z) coordinates of cell centers.
 
 - `(xᶠᵃᵃ, yᵃᶠᵃ, zᵃᵃᶠ)`: (x, y, z) coordinates of cell faces.
-
-Example
-=======
-
-Generate a horizontally-periodic grid with cell interfaces stretched
-hyperbolically near the top:
-
-```jldoctest
-using Oceananigans
-
-σ = 1.1 # stretching factor
-Nz = 24 # vertical resolution
-Lz = 32 # depth (m)
-
-hyperbolically_spaced_faces(k) = - Lz * (1 - tanh(σ * (k - 1) / Nz) / tanh(σ))
-
-grid = VerticallyStretchedRectilinearGrid(size = (32, 32, Nz),
-                                          x = (0, 64),
-                                          y = (0, 64),
-                                          z_faces = hyperbolically_spaced_faces)
-
-# output
-VerticallyStretchedRectilinearGrid{Float64, Periodic, Periodic, Bounded}
-                   domain: x ∈ [0.0, 64.0], y ∈ [0.0, 64.0], z ∈ [-32.0, -0.0]
-                 topology: (Periodic, Periodic, Bounded)
-  resolution (Nx, Ny, Nz): (32, 32, 24)
-   halo size (Hx, Hy, Hz): (1, 1, 1)
-grid spacing (Δx, Δy, Δz): (2.0, 2.0, [min=0.6826950100338962, max=1.8309085743885056])
-```
 """
 function VerticallyStretchedRectilinearGrid(FT = Float64;
                                             architecture = CPU(),

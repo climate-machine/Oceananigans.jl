@@ -1,43 +1,52 @@
 using Oceananigans: instantiated_location
+using Oceananigans.Grids
+using Oceananigans.Grids: AbstractGrid
 
 #####
 ##### Algorithm for adding fluxes associated with non-trivial flux boundary conditions.
 ##### Value and Gradient boundary conditions are handled by filling halos.
 #####
 
-"""
-    apply_x_bcs!(Gc, arch, grid, args...)
+# Unpack
+apply_x_bcs!(Gc, c, args...) = apply_x_bcs!(Gc, Gc.grid, c, c.boundary_conditions.west, c.boundary_conditions.east, args...)
+apply_y_bcs!(Gc, c, args...) = apply_y_bcs!(Gc, Gc.grid, c, c.boundary_conditions.south, c.boundary_conditions.north, args...)
+apply_z_bcs!(Gc, c, args...) = apply_z_bcs!(Gc, Gc.grid, c, c.boundary_conditions.bottom, c.boundary_conditions.top, args...)
 
-Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
-the source term `Gc` at the left and right.
-"""
-apply_x_bcs!(Gc, c, arch, dep, args...) = launch!(arch, c.grid, :yz, _apply_x_bcs!, Gc, instantiated_location(Gc), c.grid, 
-                                                  c.boundary_conditions.west, c.boundary_conditions.east, args...,
-                                                  dependencies=dep)
-
-"""
-    apply_y_bcs!(Gc, arch, grid, args...)
-
-Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
-the source term `Gc` at the left and right.
-"""
-apply_y_bcs!(Gc, c, arch, dep, args...) = launch!(arch, c.grid, :xz, _apply_y_bcs!, Gc, instantiated_location(Gc), c.grid, 
-                                                  c.boundary_conditions.south, c.boundary_conditions.north, args...,
-                                                  dependencies=dep)
-
-"""
-    apply_z_bcs!(Gc, arch, grid, args...)
-
-Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
-the source term `Gc` at the top and bottom.
-"""
-apply_z_bcs!(Gc, c, arch, dep, args...) = launch!(arch, c.grid, :xy, _apply_z_bcs!, Gc, instantiated_location(Gc), c.grid, 
-                                                  c.boundary_conditions.bottom, c.boundary_conditions.top, args...,
-                                                  dependencies=dep)
-
+# Shortcuts for...
+#
+# Nothing tendencies.
 apply_x_bcs!(::Nothing, args...) = nothing
 apply_y_bcs!(::Nothing, args...) = nothing
 apply_z_bcs!(::Nothing, args...) = nothing
+
+# Not-flux boundary conditions
+const NotFluxBC = Union{PBC, VBC, GBC, OBC, ZFBC}
+
+apply_x_bcs!(Gc, grid, c, ::NotFluxBC, NotFluxBC, args...) = nothing
+apply_y_bcs!(Gc, grid, c, ::NotFluxBC, NotFluxBC, args...) = nothing
+apply_z_bcs!(Gc, grid, c, ::NotFluxBC, NotFluxBC, args...) = nothing
+
+# The real deal
+"""
+Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
+the source term `Gc` at the left and right.
+"""
+apply_x_bcs!(Gc, grid, c, west_bc, east_bc, arch, dep, args...) =
+    launch!(arch, grid, :yz, _apply_x_bcs!, Gc, instantiated_location(Gc), grid, west_bc, east_bc, args..., dependencies=dep)
+
+"""
+Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
+the source term `Gc` at the left and right.
+"""
+apply_y_bcs!(Gc, grid, c, south_bc, north_bc, arch, dep, args...) =
+    launch!(arch, grid, :xz, _apply_y_bcs!, Gc, instantiated_location(Gc), grid, south_bc, north_bc, args..., dependencies=dep)
+
+"""
+Apply flux boundary conditions to a field `c` by adding the associated flux divergence to
+the source term `Gc` at the top and bottom.
+"""
+apply_z_bcs!(Gc, grid, c, bottom_bc, top_bc, arch, dep, args...) =
+    launch!(arch, grid, :xy, _apply_z_bcs!, Gc, instantiated_location(Gc), grid, bottom_bc, top_bc, args..., dependencies=dep)
 
 """
     _apply_x_bcs!(Gc, grid, west_bc, east_bc, args...)

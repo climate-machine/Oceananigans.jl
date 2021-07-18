@@ -1,3 +1,5 @@
+using Oceananigans.Operators: Δy_cᶜᶜᵃ, Δx_cᶜᶜᵃ
+
 #####
 ##### Diffusivities
 #####
@@ -53,6 +55,6 @@ end
 ##### Gradients of Laplacians
 #####
 
-@inline ∂x_∇²h_cᶠᶜᶜ(i, j, k, grid, c) = 1 / Azᶠᶜᵃ(i, j, k, grid) * δxᶠᵃᵃ(i, j, k, Δy_cᶜᶜᵃ, ∇²hᶜᶜᶜ, c)
-@inline ∂y_∇²h_cᶜᶠᶜ(i, j, k, grid, c) = 1 / Azᶜᶠᵃ(i, j, k, grid) * δyᵃᶠᵃ(i, j, k, Δx_cᶜᶜᵃ, ∇²hᶜᶜᶜ, c)
+@inline ∂x_∇²h_cᶠᶜᶜ(i, j, k, grid, c) = 1 / Azᶠᶜᵃ(i, j, k, grid) * δxᶠᵃᵃ(i, j, k, grid, Δy_cᶜᶜᵃ, ∇²hᶜᶜᶜ, c)
+@inline ∂y_∇²h_cᶜᶠᶜ(i, j, k, grid, c) = 1 / Azᶜᶠᵃ(i, j, k, grid) * δyᵃᶠᵃ(i, j, k, grid, Δx_cᶜᶜᵃ, ∇²hᶜᶜᶜ, c)
 

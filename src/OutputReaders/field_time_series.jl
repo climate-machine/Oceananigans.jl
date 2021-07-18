@@ -31,20 +31,25 @@ end
 @propagate_inbounds Base.getindex(f::FieldTimeSeries{X, Y, Z, InMemory}, i, j, k, n) where {X, Y, Z} = f.data[i, j, k, n]
 
 """
-    FieldTimeSeries(filepath, name; architecture=CPU(), backend=InMemory())
+    FieldTimeSeries(filepath, name; architecture=CPU(), backend=InMemory(); grid=nothing)
 
 Returns a `FieldTimeSeries` for the field `name` describing a field's time history from a JLD2 file
 located at `filepath`. Note that model output must have been saved with halos. The `InMemory` backend
 will store the data fully in memory as a 4D multi-dimensional array while the `OnDisk` backend will
 lazily load field time snapshots when the `FieldTimeSeries` is indexed linearly.
-"""
-FieldTimeSeries(filepath, name; architecture=CPU(), backend=InMemory()) =
-    FieldTimeSeries(filepath, name, architecture, backend)
 
-function FieldTimeSeries(filepath, name, architecture, backend::InMemory)
+If `grid` is not supplied, it will be reconstructed from file.
+"""
+FieldTimeSeries(filepath, name; architecture=CPU(), backend=InMemory(), kwargs...) =
+    FieldTimeSeries(filepath, name, architecture, backend; kwargs...)
+
+function FieldTimeSeries(filepath, name, architecture, backend::InMemory; grid=nothing)
     file = jldopen(filepath)
 
-    grid = file["serialized/grid"]
+    if isnothing(grid)
+        grid = file["serialized/grid"]
+    end
+
     Hx, Hy, Hz = halo_size(grid)
 
     iterations = parse.(Int, keys(file["timeseries/t"]))
@@ -70,10 +75,13 @@ function FieldTimeSeries(filepath, name, architecture, backend::InMemory)
     return FieldTimeSeries{LX, LY, LZ}(backend, data, architecture, grid, bcs, times, name, abspath(filepath), ndims(data))
 end
 
-function FieldTimeSeries(filepath, name, architecture, backend::OnDisk)
+function FieldTimeSeries(filepath, name, architecture, backend::OnDisk; grid=nothing)
     file = jldopen(filepath)
 
-    grid = file["serialized/grid"]
+    if isnothing(grid)
+        grid = file["serialized/grid"]
+    end
+
     iterations = parse.(Int, keys(file["timeseries/t"]))
     times = [file["timeseries/t/$i"] for i in iterations]
 

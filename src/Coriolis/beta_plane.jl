@@ -44,10 +44,10 @@ function BetaPlane(T=Float64; f₀=nothing, β=nothing,
 end
 
 @inline x_f_cross_U(i, j, k, grid, coriolis::BetaPlane, U) =
-    @inbounds - (coriolis.f₀ + coriolis.β * grid.yC[j]) * ℑxyᶠᶜᵃ(i, j, k, grid, U[2])
+    @inbounds - (coriolis.f₀ + coriolis.β * ynode(Face(), Center(), Center(), i, j, k, grid)) * ℑxyᶠᶜᵃ(i, j, k, grid, U[2])
 
 @inline y_f_cross_U(i, j, k, grid, coriolis::BetaPlane, U) =
-    @inbounds   (coriolis.f₀ + coriolis.β * grid.yF[j]) * ℑxyᶜᶠᵃ(i, j, k, grid, U[1])
+    @inbounds + (coriolis.f₀ + coriolis.β * ynode(Center(), Face(), Center(), i, j, k, grid)) * ℑxyᶜᶠᵃ(i, j, k, grid, U[1])
 
 @inline z_f_cross_U(i, j, k, grid::AbstractGrid{FT}, coriolis::BetaPlane, U) where FT = zero(FT)
 

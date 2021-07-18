@@ -20,7 +20,7 @@ using Oceananigans.Grids: topology
 const ParticlesOrNothing = Union{Nothing, LagrangianParticles}
 
 mutable struct IncompressibleModel{TS, E, A<:AbstractArchitecture, G, T, B, R, SD, U, C, Φ, F,
-                                   V, S, K, BG, P, I} <: AbstractModel{TS}
+                                   V, S, K, BG, P, I, AF} <: AbstractModel{TS}
 
          architecture :: A        # Computer `Architecture` on which `Model` is run
                  grid :: G        # Grid of physical points on which `Model` is solved
@@ -40,6 +40,7 @@ mutable struct IncompressibleModel{TS, E, A<:AbstractArchitecture, G, T, B, R, S
           timestepper :: TS       # Object containing timestepper fields and parameters
       pressure_solver :: S        # Pressure/Poisson solver
     immersed_boundary :: I        # Models the physics of immersed boundaries within the grid
+     auxiliary_fields :: AF       # User-specified auxiliary fields for forcing functions and boundary conditions
 end
 
 """
@@ -62,7 +63,8 @@ end
               pressures = nothing,
           diffusivities = nothing,
         pressure_solver = nothing,
-      immersed_boundary = nothing
+      immersed_boundary = nothing,
+       auxiliary_fields = NamedTuple(),
     )
 
 Construct an incompressible `Oceananigans.jl` model on `grid`.
@@ -101,7 +103,8 @@ function IncompressibleModel(;    grid,
                              pressures = nothing,
                          diffusivities = nothing,
                        pressure_solver = nothing,
-                     immersed_boundary = nothing
+                     immersed_boundary = nothing,
+                      auxiliary_fields = NamedTuple(),
     )
 
     if architecture == GPU() && !has_cuda()
@@ -116,8 +119,9 @@ function IncompressibleModel(;    grid,
     # Adjust halos when the advection scheme or turbulence closure requires it.
     # Note that halos are isotropic by default; however we respect user-input here
     # by adjusting each (x, y, z) halo individually.
-    Hx, Hy, Hz = inflate_halo_size(grid.Hx, grid.Hy, grid.Hz, topology(grid), advection, closure)
-    grid = with_halo((Hx, Hy, Hz), grid)
+    user_halo = grid.Hx, grid.Hy, grid.Hz
+    required_halo = Hx, Hy, Hz = inflate_halo_size(user_halo..., topology(grid), advection, closure)
+    user_halo != required_halo && (grid = with_halo((Hx, Hy, Hz), grid)) # Don't replace grid unless needed.
 
     # Collect boundary conditions for all model prognostic fields and, if specified, some model
     # auxiliary fields. Boundary conditions are "regularized" based on the _name_ of the field:
@@ -166,7 +170,7 @@ function IncompressibleModel(;    grid,
 
     return IncompressibleModel(architecture, grid, clock, advection, buoyancy, coriolis, stokes_drift,
                                forcing, closure, background_fields, particles, velocities, tracers,
-                               pressures, diffusivities, timestepper, pressure_solver, immersed_boundary)
+                               pressures, diffusivities, timestepper, pressure_solver, immersed_boundary, auxiliary_fields)
 end
 
 #####
