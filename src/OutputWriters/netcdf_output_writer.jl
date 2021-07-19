@@ -13,7 +13,7 @@ using Oceananigans.Diagnostics: WindowedSpatialAverage
 using Oceananigans.Fields: reduced_location, location, FieldSlicer, parent_slice_indices
 
 dictify(outputs) = outputs
-dictify(outputs::NamedTuple) = Dict(string(k) => dictify(v) for (k, v) in zip(keys(outputs), values(outputs)))
+dictify(outputs::NamedTuple) = Dict{Any,Any}(string(k) => dictify(v) for (k, v) in zip(keys(outputs), values(outputs)))
 dictify(outputs::LagrangianParticles) = Dict("particles" => outputs)
 
 xdim(::Type{Face}) = ("xF",)
