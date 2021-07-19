@@ -2,6 +2,7 @@
 
 using Oceananigans
 using Oceananigans.Grids
+using Oceananigans.BoundaryConditions
 
 using Oceananigans.Coriolis:
     HydrostaticSphericalCoriolis,
