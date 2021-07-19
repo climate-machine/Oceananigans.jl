@@ -2,7 +2,7 @@ using Glob
 
 using Oceananigans.Utils: initialize_schedule!, align_time_step
 using Oceananigans.Fields: set!
-using Oceananigans.OutputWriters: WindowedTimeAverage, checkpoint_superprefix
+using Oceananigans.OutputWriters: Checkpointer, WindowedTimeAverage, checkpoint_superprefix
 using Oceananigans.TimeSteppers: QuasiAdamsBashforth2TimeStepper, RungeKutta3TimeStepper, update_state!, next_time, unit_time
 
 using Oceananigans: AbstractModel, run_diagnostic!, write_output!
@@ -189,5 +189,8 @@ function run!(sim; pickup=false)
         sim.run_time += time_after - time_before
     end
 
+    # Checkpoint at the end of `run!`
+    [write_output!(writer, sim.model) for writer in values(sim.output_writers) if writer isa Checkpointer]
+    
     return nothing
 end
