@@ -11,12 +11,13 @@ using Oceananigans.Grids
 using Oceananigans.Fields
 using Oceananigans.AbstractOperations
 using Oceananigans.OutputWriters
+using Oceananigans.BoundaryConditions: NormalFlow
 
 # setting boundary condition topology
 topology=(Periodic, Bounded, Bounded)
 
 # setting up 2D grid
-grid = RegularCartesianGrid(topology=topology, size=(350, 350, 1), x=(20, 40), y=(10, 30), z=(0, 1))
+grid = RegularRectilinearGrid(topology=topology, size=(350, 350, 1), x=(20, 40), y=(10, 30), z=(0, 1))
 #grid = RegularCartesianGrid(topology=topology, size=(1500, 1500, 1), x=(0, 60), y=(0, 60), z=(0, 1))
 
 # reynolds number
