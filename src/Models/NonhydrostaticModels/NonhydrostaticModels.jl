@@ -30,8 +30,7 @@ prognostic_fields(model::NonhydrostaticModel) = fields(model)
 include("update_hydrostatic_pressure.jl")
 include("update_nonhydrostatic_model_state.jl")
 include("pressure_correction.jl")
-include("velocity_and_tracer_tendencies.jl")
-include("calculate_tendencies.jl")
-include("correct_nonhydrostatic_immersed_tendencies.jl")
+include("nonhydrostatic_tendency_kernel_functions.jl")
+include("calculate_nonhydrostatic_tendencies.jl")
 
 end # module

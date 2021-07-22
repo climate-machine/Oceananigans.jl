@@ -11,31 +11,9 @@ contribution from non-hydrostatic pressure.
 """
 function calculate_tendencies!(model::NonhydrostaticModel)
 
-    # Note:
-    #
-    # "tendencies" is a NamedTuple of OffsetArrays corresponding to the tendency data for use
-    # in GPU computations.
-    #
-    # "model.timestepper.Gⁿ" is a NamedTuple of Fields, whose data also corresponds to
-    # tendency data.
-
     # Calculate contributions to momentum and tracer tendencies from fluxes and volume terms in the
     # interior of the domain
-    calculate_interior_tendency_contributions!(model.timestepper.Gⁿ,
-                                               model.architecture,
-                                               model.grid,
-                                               model.advection,
-                                               model.coriolis,
-                                               model.buoyancy,
-                                               model.stokes_drift,
-                                               model.closure,
-                                               model.background_fields,
-                                               model.velocities,
-                                               model.tracers,
-                                               model.pressures.pHY′,
-                                               model.diffusivities,
-                                               model.forcing,
-                                               model.clock)
+    calculate_interior_tendency_contributions!(model)
 
     # Calculate contributions to momentum and tracer tendencies from user-prescribed fluxes across the
     # boundaries of the domain
@@ -44,27 +22,37 @@ function calculate_tendencies!(model::NonhydrostaticModel)
                                                model.velocities,
                                                model.tracers,
                                                model.clock,
-                                               fields(model))
+                                               prognostic_fields(model))
 
     return nothing
 end
 
 """ Store previous value of the source term and calculate current source term. """
-function calculate_interior_tendency_contributions!(tendencies,
-                                                    arch,
-                                                    grid,
-                                                    advection,
-                                                    coriolis,
-                                                    buoyancy,
-                                                    stokes_drift,
-                                                    closure,
-                                                    background_fields,
-                                                    velocities,
-                                                    tracers,
-                                                    hydrostatic_pressure,
-                                                    diffusivities,
-                                                    forcings,
-                                                    clock)
+function calculate_interior_tendency_contributions!(model)
+
+    arch = model.architecture
+    grid = model.grid
+    velocities = model.velocities
+
+    velocities_immersed_boundary_conditions = (u = velocities.u.boundary_conditions.immersed,
+                                               v = velocities.v.boundary_conditions.immersed,
+                                               w = velocities.w.boundary_conditions.immersed)
+
+
+    momentum_kernel_args = (model.grid,
+                            model.advection,
+                            model.coriolis,
+                            model.stokes_drift,
+                            model.closure,
+                            model.buoyancy,
+                            model.background_fields,
+                            model.velocities,
+                            velocities_immersed_boundary_conditions,
+                            model.tracers,
+                            model.diffusivities,
+                            model.forcing,
+                            model.pressures.pHY′,
+                            model.clock)
 
     workgroup, worksize = work_layout(grid, :xyz)
 
@@ -75,27 +63,31 @@ function calculate_interior_tendency_contributions!(tendencies,
 
     barrier = Event(device(arch))
 
-    Gu_event = calculate_Gu_kernel!(tendencies.u, grid, advection, coriolis, stokes_drift, closure,
-                                    buoyancy, background_fields, velocities, tracers, diffusivities,
-                                    forcings, hydrostatic_pressure, clock, dependencies=barrier)
-
-    Gv_event = calculate_Gv_kernel!(tendencies.v, grid, advection, coriolis, stokes_drift, closure,
-                                    buoyancy, background_fields, velocities, tracers, diffusivities,
-                                    forcings, hydrostatic_pressure, clock, dependencies=barrier)
-
-    Gw_event = calculate_Gw_kernel!(tendencies.w, grid, advection, coriolis, stokes_drift, closure,
-                                    buoyancy, background_fields, velocities, tracers, diffusivities,
-                                    forcings, clock, dependencies=barrier)
+    Gu_event = calculate_Gu_kernel!(model.timestepper.Gⁿ.u, momentum_kernel_args..., dependencies=barrier)
+    Gv_event = calculate_Gv_kernel!(model.timestepper.Gⁿ.v, momentum_kernel_args..., dependencies=barrier)
+    Gw_event = calculate_Gw_kernel!(model.timestepper.Gⁿ.w, momentum_kernel_args..., dependencies=barrier)
 
     events = [Gu_event, Gv_event, Gw_event]
 
-    for tracer_index in 1:length(tracers)
-        @inbounds c_tendency = tendencies[tracer_index+3]
-        @inbounds forcing = forcings[tracer_index+3]
+    for (tracer_index, tracer_name) in enumerate(propertynames(model.tracers))
+        @inbounds tracer_tendency = model.timestepper.Gⁿ[tracer_name]
+        @inbounds tracer_forcing = model.forcing[tracer_name]
+        tracer_immersed_boundary_condition = model.tracers[tracer_name].boundary_conditions.immersed
 
-        Gc_event = calculate_Gc_kernel!(c_tendency, grid, Val(tracer_index), advection, closure, buoyancy,
-                                        background_fields, velocities, tracers, diffusivities,
-                                        forcing, clock, dependencies=barrier)
+        Gc_event = calculate_Gc_kernel!(tracer_tendency,
+                                        grid,
+                                        Val(tracer_index),
+                                        model.advection,
+                                        tracer_immersed_boundary_condition,
+                                        model.closure,
+                                        model.buoyancy,
+                                        model.background_fields,
+                                        model.velocities,
+                                        model.tracers,
+                                        model.diffusivities,
+                                        tracer_forcing,
+                                        model.clock,
+                                        dependencies = barrier)
 
         push!(events, Gc_event)
     end

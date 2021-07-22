@@ -27,12 +27,21 @@
 ##### Diffusive flux divergence
 #####
 
-@inline _diffusive_flux_x(args...) = diffusive_flux_x(args...)
-@inline _diffusive_flux_y(args...) = diffusive_flux_y(args...)
-@inline _diffusive_flux_z(args...) = diffusive_flux_z(args...)
+const ATC = AbstractTurbulenceClosure
+const ATD = AbstractTimeDiscretization
+
+# Throw away immersed boundary condition when calculating "intrinsic" fluxes
+@inline _diffusive_flux_x(i, j, k, grid, disc::ATD, closure, ::BoundaryCondition, c::AbstractArray, args...) = diffusive_flux_x(i, j, k, grid, disc, closure, c, args...)
+@inline _diffusive_flux_y(i, j, k, grid, disc::ATD, closure, ::BoundaryCondition, c::AbstractArray, args...) = diffusive_flux_y(i, j, k, grid, disc, closure, c, args...)
+@inline _diffusive_flux_z(i, j, k, grid, disc::ATD, closure, ::BoundaryCondition, c::AbstractArray, args...) = diffusive_flux_z(i, j, k, grid, disc, closure, c, args...)
+
+# Functions for models that do not support immersed boundaries
+@inline _diffusive_flux_x(i, j, k, grid, disc::ATD, closure, c::AbstractArray, args...) = diffusive_flux_x(i, j, k, grid, disc, closure, c, args...)
+@inline _diffusive_flux_y(i, j, k, grid, disc::ATD, closure, c::AbstractArray, args...) = diffusive_flux_y(i, j, k, grid, disc, closure, c, args...)
+@inline _diffusive_flux_z(i, j, k, grid, disc::ATD, closure, c::AbstractArray, args...) = diffusive_flux_z(i, j, k, grid, disc, closure, c, args...)
 
 """
-    ∇_dot_qᶜ(i, j, k, grid, clock, closure::AbstractTurbulenceClosure, c, ::Val{tracer_index}, args...)
+    ∇_dot_qᶜ(i, j, k, grid, clock, closure::AbstractTurbulenceClosure, args...)
 
 Calculates the divergence of the diffusive flux `qᶜ` for a tracer `c` via
 
@@ -40,13 +49,13 @@ Calculates the divergence of the diffusive flux `qᶜ` for a tracer `c` via
 
 which will end up at the location `ccc`.
 """
-@inline function ∇_dot_qᶜ(i, j, k, grid, closure::AbstractTurbulenceClosure, c, tracer_index, args...)
+@inline function ∇_dot_qᶜ(i, j, k, grid, closure::AbstractTurbulenceClosure, args...)
 
     disc = time_discretization(closure)
 
-    return 1/Vᶜᶜᶜ(i, j, k, grid) * (δxᶜᵃᵃ(i, j, k, grid, Ax_uᶠᶜᶜ, diffusive_flux_x, disc, closure, c, tracer_index, args...) +
-                                    δyᵃᶜᵃ(i, j, k, grid, Ay_vᶜᶠᶜ, diffusive_flux_y, disc, closure, c, tracer_index, args...) +
-                                    δzᵃᵃᶜ(i, j, k, grid, Az_wᶜᶜᵃ, diffusive_flux_z, disc, closure, c, tracer_index, args...))
+    return 1/Vᶜᶜᶜ(i, j, k, grid) * (δxᶜᵃᵃ(i, j, k, grid, Ax_uᶠᶜᶜ, _diffusive_flux_x, disc, closure, args...) +
+                                    δyᵃᶜᵃ(i, j, k, grid, Ay_vᶜᶠᶜ, _diffusive_flux_y, disc, closure, args...) +
+                                    δzᵃᵃᶜ(i, j, k, grid, Az_wᶜᶜᵃ, _diffusive_flux_z, disc, closure, args...))
 end
 
 #####

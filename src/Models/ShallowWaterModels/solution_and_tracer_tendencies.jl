@@ -1,5 +1,4 @@
 using Oceananigans.Advection
-using Oceananigans.ImmersedBoundaries: ImmersedBoundaryGrid, GridFittedBoundary
 using Oceananigans.Coriolis
 using Oceananigans.Operators
 using Oceananigans.TurbulenceClosures: ∇_dot_qᶜ

@@ -35,12 +35,16 @@ function calculate_hydrostatic_momentum_tendencies!(model, velocities; dependenc
 
     arch = model.architecture
     grid = model.grid
+    velocities_immersed_boundary_conditions = (u = velocities.u.boundary_conditions.immersed,
+                                               v = velocities.v.boundary_conditions.immersed,
+                                               w = velocities.w.boundary_conditions.immersed)
 
     momentum_kernel_args = (grid,
                             model.advection.momentum,
                             model.coriolis,
                             model.closure,
                             velocities,
+                            velocities_immersed_boundary_conditions, 
                             model.free_surface,
                             model.tracers,
                             model.buoyancy,
@@ -92,18 +96,20 @@ function calculate_hydrostatic_free_surface_interior_tendency_contributions!(mod
     events = calculate_hydrostatic_momentum_tendencies!(model, model.velocities; dependencies = barrier)
 
     for (tracer_index, tracer_name) in enumerate(propertynames(model.tracers))
-        @inbounds c_tendency = model.timestepper.Gⁿ[tracer_name]
-        @inbounds c_advection = model.advection[tracer_name]
-        @inbounds c_forcing = model.forcing[tracer_name]
-        c_kernel_function = tracer_tendency_kernel_function(model, model.closure, Val(tracer_name))
+        @inbounds tracer_tendency = model.timestepper.Gⁿ[tracer_name]
+        @inbounds tracer_advection = model.advection[tracer_name]
+        @inbounds tracer_forcing = model.forcing[tracer_name]
+        tracer_kernel_function = tracer_tendency_kernel_function(model, model.closure, Val(tracer_name))
+        tracer_immersed_boundary_condition = model.tracers[tracer_name].boundary_conditions.immersed
 
         Gc_event = launch!(arch, grid, :xyz,
                            calculate_hydrostatic_free_surface_Gc!,
-                           c_tendency,
-                           c_kernel_function,
+                           tracer_tendency,
+                           tracer_kernel_function,
                            grid,
                            Val(tracer_index),
-                           c_advection,
+                           tracer_advection,
+                           tracer_immersed_boundary_condition,
                            model.closure,
                            model.buoyancy,
                            model.velocities,
@@ -111,7 +117,7 @@ function calculate_hydrostatic_free_surface_interior_tendency_contributions!(mod
                            model.tracers,
                            model.diffusivities,
                            model.auxiliary_fields,
-                           c_forcing,
+                           tracer_forcing,
                            model.clock;
                            dependencies = barrier)
 

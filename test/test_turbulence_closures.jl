@@ -45,10 +45,12 @@ function run_constant_isotropic_diffusivity_fluxdiv_tests(FT=Float64; ν=FT(0.3)
 
     U, C = datatuples(velocities, tracers)
 
-    @test ∇_dot_qᶜ(2, 1, 3, grid, closure, C.T, Val(1), clock, nothing) == - 2κ
-    @test ∂ⱼ_τ₁ⱼ(2, 1, 3, grid, closure, clock, U, nothing) == - 2ν
-    @test ∂ⱼ_τ₂ⱼ(2, 1, 3, grid, closure, clock, U, nothing) == - 4ν
-    @test ∂ⱼ_τ₃ⱼ(2, 1, 3, grid, closure, clock, U, nothing) == - 6ν
+    four_nothings = Tuple(nothing for i=1:4)
+    three_nothings = Tuple(nothing for i=1:3)
+    @test ∇_dot_qᶜ(2, 1, 3, grid, closure, C.T, Val(1), clock, four_nothings...) == - 2κ
+    @test ∂ⱼ_τ₁ⱼ(2, 1, 3, grid, closure, clock, U, three_nothings...) == - 2ν
+    @test ∂ⱼ_τ₂ⱼ(2, 1, 3, grid, closure, clock, U, three_nothings...) == - 4ν
+    @test ∂ⱼ_τ₃ⱼ(2, 1, 3, grid, closure, clock, U, three_nothings...) == - 6ν
 
     return nothing
 end

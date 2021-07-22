@@ -20,7 +20,7 @@ using Oceananigans.Grids: topology
 const ParticlesOrNothing = Union{Nothing, LagrangianParticles}
 
 mutable struct NonhydrostaticModel{TS, E, A<:AbstractArchitecture, G, T, B, R, SD, U, C, Φ, F,
-                                   V, S, K, BG, P, I} <: AbstractModel{TS}
+                                   V, S, K, BG, P} <: AbstractModel{TS}
 
          architecture :: A        # Computer `Architecture` on which `Model` is run
                  grid :: G        # Grid of physical points on which `Model` is solved
@@ -39,7 +39,6 @@ mutable struct NonhydrostaticModel{TS, E, A<:AbstractArchitecture, G, T, B, R, S
         diffusivities :: K        # Container for turbulent diffusivities
           timestepper :: TS       # Object containing timestepper fields and parameters
       pressure_solver :: S        # Pressure/Poisson solver
-    immersed_boundary :: I        # Models the physics of immersed boundaries within the grid
 end
 
 """
@@ -61,8 +60,7 @@ end
              velocities = nothing,
               pressures = nothing,
           diffusivities = nothing,
-        pressure_solver = nothing,
-      immersed_boundary = nothing
+        pressure_solver = nothing
     )
 
 Construct a model for a non-hydrostatic, incompressible fluid, using the Boussinesq approximation
@@ -101,8 +99,7 @@ function NonhydrostaticModel(;    grid,
                             velocities = nothing,
                              pressures = nothing,
                          diffusivities = nothing,
-                       pressure_solver = nothing,
-                     immersed_boundary = nothing
+                       pressure_solver = nothing
     )
 
     if architecture == GPU() && !has_cuda()
@@ -167,7 +164,7 @@ function NonhydrostaticModel(;    grid,
 
     return NonhydrostaticModel(architecture, grid, clock, advection, buoyancy, coriolis, stokes_drift,
                                forcing, closure, background_fields, particles, velocities, tracers,
-                               pressures, diffusivities, timestepper, pressure_solver, immersed_boundary)
+                               pressures, diffusivities, timestepper, pressure_solver)
 end
 
 #####
