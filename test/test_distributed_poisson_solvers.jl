@@ -37,7 +37,8 @@ function divergence_free_poisson_solution_triply_periodic(grid_points, ranks)
     R = random_divergent_source_term(child_architecture(arch), local_grid)
     first(solver.storage) .= R
 
-    solve_poisson_equation!(solver)
+    ϕc = first(solver.storage)
+    solve!(ϕc, solver)
 
     p_bcs = FieldBoundaryConditions(local_grid, (Center, Center, Center))
     p_bcs = inject_halo_communication_boundary_conditions(p_bcs, arch.local_rank, arch.connectivity)

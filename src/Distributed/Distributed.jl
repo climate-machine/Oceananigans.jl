@@ -14,6 +14,7 @@ using Oceananigans.Utils
 
 include("distributed_utils.jl")
 include("multi_architectures.jl")
+include("distributed_kernel_launching.jl")
 include("halo_communication_bcs.jl")
 include("halo_communication.jl")
 include("distributed_fields.jl")

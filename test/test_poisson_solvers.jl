@@ -1,5 +1,6 @@
-using Oceananigans.Solvers: solve_for_pressure!, solve_poisson_equation!, set_source_term!
+using Oceananigans.Solvers: solve!, set_source_term!
 using Oceananigans.Solvers: poisson_eigenvalues
+using Oceananigans.Models.NonhydrostaticModels: solve_for_pressure!
 using Oceananigans.Models.HydrostaticFreeSurfaceModels: _compute_w_from_continuity!
 using Oceananigans.BoundaryConditions: regularize_field_boundary_conditions
 
@@ -91,7 +92,7 @@ function divergence_free_poisson_solution(arch, grid, planner_flag=FFTW.MEASURE)
     ∇²ϕ = CenterField(arch, grid, p_bcs)
 
     # Using Δt = 1 but it doesn't matter since velocities = 0.
-    solve_for_pressure!(ϕ.data, solver, arch, grid, 1, datatuple(U))
+    solve_for_pressure!(ϕ.data, solver, 1, U)
 
     compute_∇²!(∇²ϕ, ϕ, arch, grid)
 
@@ -120,7 +121,8 @@ function analytical_poisson_solver_test(arch, N, topo; FT=Float64, mode=1)
 
     solver.storage .= convert(array_type(arch), f.(xC, yC, zC))
 
-    solve_poisson_equation!(solver)
+    ϕc = rhs = solver.storage
+    solve!(ϕc, solver, rhs)
 
     ϕ = real(Array(solver.storage))
 
@@ -167,7 +169,8 @@ function vertically_stretched_poisson_solver_correct_answer(FT, arch, topo, Nx, 
     R = random_divergence_free_source_term(arch, vs_grid)
 
     set_source_term!(solver, R)
-    solve_poisson_equation!(solver)
+    ϕc = solver.storage
+    solve!(ϕc, solver)
 
     # interior(ϕ) = solution(solver) or solution!(interior(ϕ), solver)
     CUDA.@allowscalar interior(ϕ) .= real.(solver.storage)

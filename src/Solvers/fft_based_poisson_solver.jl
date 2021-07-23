@@ -1,3 +1,6 @@
+using Oceananigans.Architectures: device_event
+using Oceananigans: short_show
+
 struct FFTBasedPoissonSolver{A, G, Λ, S, B, T}
     architecture :: A
             grid :: G
@@ -6,6 +9,24 @@ struct FFTBasedPoissonSolver{A, G, Λ, S, B, T}
           buffer :: B
       transforms :: T
 end
+
+transform_str(transform) = string(typeof(transform).name.wrapper, ", ")
+
+function transform_list_str(transform_list)
+    transform_strs = (transform_str(t) for t in transform_list)
+    list = string(transform_strs...)
+    list = list[1:end-2]
+    return list
+end
+
+Base.show(io::IO, solver::FFTBasedPoissonSolver{A, G}) where {A, G}=
+    print(io, "FFTBasedPoissonSolver{$A}: \n",
+          "├── grid: $(short_show(solver.grid))\n",
+          "├── storage: $(typeof(solver.storage))\n",
+          "├── buffer: $(typeof(solver.buffer))\n",
+          "└── transforms:\n",
+          "    ├── forward: ", transform_list_str(solver.transforms.forward), "\n",
+          "    └── backward: ", transform_list_str(solver.transforms.backward))
 
 function FFTBasedPoissonSolver(arch, grid, planner_flag=FFTW.PATIENT)
     topo = (TX, TY, TZ) =  topology(grid)
@@ -32,38 +53,53 @@ function FFTBasedPoissonSolver(arch, grid, planner_flag=FFTW.PATIENT)
 end
 
 """
-    solve_poisson_equation!(solver)
+    solve!(ϕ, poisson_solver::FFTBasedPoissonSolver, b, m=0)
 
-Solves Poisson's equation ∇²ϕ = RHS where `RHS = solver.storage` using periodic or staggered
-Neumann boundary conditions as determined by the `solver.grid`. `solver.storage` will be mutated
-to contain the solution.
+Solves the "generalized" Poisson equation,
+
+```math
+(∇² + m) ϕ = b,
+```
+
+where ``m`` is a number, using a eigenfunction expansion of the discrete Poisson operator
+on a staggered grid and for periodic or Neumann boundary conditions.
+
+In-place transforms are applied to ``b``, which means ``b`` must have complex-valued
+elements (typically the same type as `poisson_solver.storage`).
+
+Note: ``(∇² + m) ϕ = b`` is sometimes called the "screened Poisson" equation
+when ``m < 0``, or the Helmholtz equation when ``m > 0``.
 """
-function solve_poisson_equation!(solver::FFTBasedPoissonSolver)
+function solve!(ϕ, solver::FFTBasedPoissonSolver, b, m=0)
+    arch = solver.architecture
     topo = TX, TY, TZ = topology(solver.grid)
+    Nx, Ny, Nz = size(solver.grid)
     λx, λy, λz = solver.eigenvalues
 
-    # We can use the same storage for the RHS and the solution ϕ.
-    RHS = ϕ = solver.storage
+    # Temporarily store the solution in ϕc
+    ϕc = solver.storage
 
-    # Apply forward transforms in order
-    [transform!(RHS, solver.buffer) for transform! in solver.transforms.forward]
+    # Transform b *in-place* to eigenfunction space
+    [transform!(b, solver.buffer) for transform! in solver.transforms.forward]
 
-    # Solve the discrete Poisson equation.
-    @. ϕ = -RHS / (λx + λy + λz)
+    # Solve the discrete screened Poisson equation (∇² + m) ϕ = b.
+    @. ϕc = - b / (λx + λy + λz - m)
 
-    # Set the volume mean of the solution to be zero.
-    # λx[1, 1, 1] + λy[1, 1, 1] + λz[1, 1, 1] = 0 so if ϕ[1, 1, 1] = 0 we get NaNs
-    # everywhere after the inverse transform. In eigenspace, ϕ[1, 1, 1] is the
-    # "zeroth mode" corresponding to the volume mean of the transform of ϕ, or of ϕ
-    # in physical space.
-    # Another way of thinking about this: Solutions to Poisson's equation are only
-    # unique up to a constant (the global mean of the solution), so we need to pick
-    # a constant. ϕ[1, 1, 1] = 0 chooses the constant to be zero so that the solution
-    # has zero-mean.
-    CUDA.@allowscalar ϕ[1, 1, 1] = 0
+    # If m === 0, the "zeroth mode" at `i, j, k = 1, 1, 1` is undetermined;
+    # we set this to zero by default. Another slant on this "problem" is that
+    # λx[1, 1, 1] + λy[1, 1, 1] + λz[1, 1, 1] = 0, which yields ϕ[1, 1, 1] = Inf or NaN.
+    m === 0 && CUDA.@allowscalar ϕc[1, 1, 1] = 0
 
     # Apply backward transforms in order
-    [transform!(ϕ, solver.buffer) for transform! in solver.transforms.backward]
+    [transform!(ϕc, solver.buffer) for transform! in solver.transforms.backward]
 
-    return nothing
+    copy_event = launch!(arch, solver.grid, :xyz, copy_real_component!, ϕ, ϕc, dependencies=device_event(arch))
+    wait(device(arch), copy_event)
+
+    return ϕ
+end
+
+@kernel function copy_real_component!(ϕ, ϕc)
+    i, j, k = @index(Global, NTuple)
+    @inbounds ϕ[i, j, k] = real(ϕc[i, j, k])
 end

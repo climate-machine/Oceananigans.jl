@@ -1,3 +1,4 @@
+using Oceananigans.Architectures: device_event
 using Oceananigans.Grids: AbstractGrid
 using Oceananigans.Operators: ∂xᶠᶜᵃ, ∂yᶜᶠᵃ
 using Oceananigans.BoundaryConditions: regularize_field_boundary_conditions
@@ -46,7 +47,7 @@ explicit_ab2_step_free_surface!(free_surface, model, Δt, χ) =
     launch!(model.architecture, model.grid, :xy,
             _explicit_ab2_step_free_surface!, free_surface.η, Δt, χ,
             model.timestepper.Gⁿ.η, model.timestepper.G⁻.η,
-            dependencies = Event(device(model.architecture)))
+            dependencies = device_event(model.architecture))
 
 #####
 ##### Kernel

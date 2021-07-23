@@ -15,20 +15,27 @@
 # using Pkg
 # pkg"add Oceananigans, JLD2, Plots"
 # ```
-
-# ## A one-dimensional domain
-#
-# We use a one-dimensional domain of geophysical proportions,
+# 
+# The HydrostaticFreeSurfaceModel is still "experimental". This means some of its features
+# are not exported, such as the ImplicitFreeSurface, and must be brought into scope manually:
 
 using Oceananigans
 using Oceananigans.Units
 using Oceananigans.Models.HydrostaticFreeSurfaceModels: ImplicitFreeSurface
 
-grid = RegularRectilinearGrid(size = (128, 1, 1),
-                              x = (0, 1000kilometers), y = (0, 1), z = (-400meters, 0),
-                              topology = (Bounded, Periodic, Bounded))
+# ## A one-dimensional domain
+#
+# We use a one-dimensional domain of geophysical proportions,
 
-# and Coriolis parameter appropriate for the mid-latitudes on Earth,
+grid = RegularRectilinearGrid(size = (128, 1),
+                              x = (0, 1000kilometers), z = (-400meters, 0),
+                              topology = (Bounded, Flat, Bounded))
+
+# !!! note
+#   We always have to include the z-direction for `HydrostaticFreeSurfaceModel`, even if
+#   the model is "barotropic" with just one grid point in z.
+#
+# We deploy a Coriolis parameter appropriate for the mid-latitudes on Earth,
 
 coriolis = FPlane(f=1e-4)
 
@@ -38,26 +45,26 @@ coriolis = FPlane(f=1e-4)
 
 model = HydrostaticFreeSurfaceModel(grid = grid,
                                     coriolis = coriolis,
-                                    free_surface=ImplicitFreeSurface())
+                                    free_surface = ImplicitFreeSurface())
 
 # ## A geostrophic adjustment initial value problem
 #
 # We pose a geostrophic adjustment problem that consists of a partially-geostrophic
 # Gaussian height field complemented by a geostrophic ``y``-velocity,
 
-Gaussian(x, L) = exp(-x^2 / 2L^2)
+gaussian(x, L) = exp(-x^2 / 2L^2)
 
 U = 0.1 # geostrophic velocity
 L = grid.Lx / 40 # Gaussian width
 x₀ = grid.Lx / 4 # Gaussian center
 
-vᵍ(x, y, z) = - U * (x - x₀) / L * Gaussian(x - x₀, L)
+vᵍ(x, y, z) = - U * (x - x₀) / L * gaussian(x - x₀, L)
 
 g = model.free_surface.gravitational_acceleration
 
 η₀ = coriolis.f * U * L / g # geostrohpic free surface amplitude
 
-ηᵍ(x) = η₀ * Gaussian(x - x₀, L)
+ηᵍ(x) = η₀ * gaussian(x - x₀, L)
 
 # We use an initial height field that's twice the geostrophic solution,
 # thus superimposing a geostrophic and ageostrophic component in the free
@@ -77,7 +84,7 @@ gravity_wave_speed = sqrt(g * grid.Lz) # hydrostatic (shallow water) gravity wav
 
 wave_propagation_time_scale = model.grid.Δx / gravity_wave_speed
 
-simulation = Simulation(model, Δt = 0.1 * wave_propagation_time_scale, stop_iteration = 1000)
+simulation = Simulation(model, Δt = 0.1wave_propagation_time_scale, stop_iteration = 1000)
 
 # ## Output
 #
@@ -88,42 +95,43 @@ output_fields = merge(model.velocities, (η=model.free_surface.η,))
 simulation.output_writers[:fields] = JLD2OutputWriter(model, output_fields,
                                                       schedule = IterationInterval(10),
                                                       prefix = "geostrophic_adjustment",
+                                                      field_slicer = nothing,
                                                       force = true)
 
 run!(simulation)
 
 # ## Visualizing the results
 
-using JLD2, Plots, Printf
+using Oceananigans.OutputReaders: FieldTimeSeries
+using Plots, Printf
 
-xη = xw = xv = xnodes(model.free_surface.η)
-xu = xnodes(model.velocities.u)
+u_timeseries = FieldTimeSeries("geostrophic_adjustment.jld2", "u")
+v_timeseries = FieldTimeSeries("geostrophic_adjustment.jld2", "v")
+η_timeseries = FieldTimeSeries("geostrophic_adjustment.jld2", "η")
 
-file = jldopen(simulation.output_writers[:fields].filepath)
+xη = xw = xv = xnodes(v_timeseries)
+xu = xnodes(u_timeseries)
 
-iterations = parse.(Int, keys(file["timeseries/t"]))
+t = u_timeseries.times
 
-anim = @animate for (i, iter) in enumerate(iterations)
+anim = @animate for i = 1:length(t)
 
-    u = file["timeseries/u/$iter"][:, 1, 1]
-    v = file["timeseries/v/$iter"][:, 1, 1]
-    η = file["timeseries/η/$iter"][:, 1, 1]
-    t = file["timeseries/t/$iter"]
+    u = interior(u_timeseries[i])[:, 1, 1]
+    v = interior(v_timeseries[i])[:, 1, 1]
+    η = interior(η_timeseries[i])[:, 1, 1]
 
-    titlestr = @sprintf("Geostrophic adjustment at t = %.1f hours", t / hours)
-
-    v_plot = plot(xv / kilometers, v, linewidth = 2, title = titlestr,
-                  label = "", xlabel = "x (km)", ylabel = "v (m s⁻¹)", ylims = (-U, U))
+    titlestr = @sprintf("Geostrophic adjustment at t = %.1f hours", t[i] / hours)
 
     u_plot = plot(xu / kilometers, u, linewidth = 2,
                   label = "", xlabel = "x (km)", ylabel = "u (m s⁻¹)", ylims = (-2e-3, 2e-3))
+
+    v_plot = plot(xv / kilometers, v, linewidth = 2, title = titlestr,
+                  label = "", xlabel = "x (km)", ylabel = "v (m s⁻¹)", ylims = (-U, U))
 
     η_plot = plot(xη / kilometers, η, linewidth = 2,
                   label = "", xlabel = "x (km)", ylabel = "η (m)", ylims = (-η₀/10, 2η₀))
 
     plot(v_plot, u_plot, η_plot, layout = (3, 1), size = (800, 600))
 end
-
-close(file)
 
 mp4(anim, "geostrophic_adjustment.mp4", fps = 15) # hide

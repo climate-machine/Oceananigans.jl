@@ -1,4 +1,5 @@
 using Oceananigans.Architectures
+import Oceananigans.Architectures: device_event
 
 using Oceananigans.Grids: topology, validate_tupled_argument
 
@@ -27,6 +28,8 @@ child_architecture(::CPU) = CPU()
 
 child_architecture(::MultiGPU) = GPU()
 child_architecture(::GPU) = GPU()
+
+device_event(arch::AbstractMultiArchitecture) = device_event(child_architecture(arch))
 
 #####
 ##### Converting between index and MPI rank taking k as the fast index

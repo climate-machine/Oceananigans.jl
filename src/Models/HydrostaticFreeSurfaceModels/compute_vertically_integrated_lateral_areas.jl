@@ -1,4 +1,4 @@
-@kernel function _compute_vertically_integrated_lateral_face_areas!(∫ᶻ_A, grid)
+@kernel function _compute_vertically_integrated_lateral_areas!(∫ᶻ_A, grid)
     i, j, k = @index(Global, NTuple)
 
     @inbounds begin
@@ -12,12 +12,12 @@
     end
 end
 
-function compute_vertically_integrated_lateral_face_areas!(∫ᶻ_A, grid, arch)
+function compute_vertically_integrated_lateral_areas!(∫ᶻ_A, grid, arch)
 
     event = launch!(arch,
                     grid,
                     :xyz,
-                    _compute_vertically_integrated_lateral_face_areas!,
+                    _compute_vertically_integrated_lateral_areas!,
                     ∫ᶻ_A,
                     grid,
                     dependencies=Event(device(arch)))

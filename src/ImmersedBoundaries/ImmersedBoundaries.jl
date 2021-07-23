@@ -37,7 +37,6 @@ using Oceananigans.Advection:
     advective_tracer_flux_z
 
 import Oceananigans.Utils: cell_advection_timescale
-import Oceananigans.Solvers: PressureSolver
 import Oceananigans.Grids: with_halo
 import Oceananigans.Coriolis: φᶠᶠᵃ
 import Oceananigans.Grids: with_halo, xnode, ynode, znode, all_x_nodes, all_y_nodes, all_z_nodes
@@ -112,8 +111,6 @@ Adapt.adapt_structure(to, ibg::IBG{FT, TX, TY, TZ}) where {FT, TX, TY, TZ} =
 
 with_halo(halo, ibg::ImmersedBoundaryGrid) = ImmersedBoundaryGrid(with_halo(halo, ibg.grid), ibg.immersed_boundary)
 
-# *Evil grin*
-PressureSolver(arch, ibg::ImmersedBoundaryGrid) = PressureSolver(arch, ibg.grid)
 
 @inline cell_advection_timescale(u, v, w, ibg::ImmersedBoundaryGrid) = cell_advection_timescale(u, v, w, ibg.grid)
 @inline φᶠᶠᵃ(i, j, k, ibg::ImmersedBoundaryGrid) = φᶠᶠᵃ(i, j, k, ibg.grid)

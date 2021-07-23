@@ -172,9 +172,9 @@ function solve!(x, solver::PreconditionedConjugateGradientSolver, b, args...)
         iterate!(x, solver, b, args...)
     end
 
-    fill_halo_regions!(x, solver.architecture)
+    fill_halo_regions!(x, solver.architecture) # blocking
 
-    return nothing
+    return x
 end
 
 function iterate!(x, solver, b, args...)
