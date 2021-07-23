@@ -11,7 +11,7 @@ using Oceananigans.Fields: BackgroundFields, Field, tracernames, VelocityFields,
 using Oceananigans.Forcings: model_forcing
 using Oceananigans.Grids: inflate_halo_size, with_halo
 using Oceananigans.Solvers: FFTBasedPoissonSolver
-using Oceananigans.TimeSteppers: Clock, TimeStepper
+using Oceananigans.TimeSteppers: Clock, TimeStepper, update_state!
 using Oceananigans.TurbulenceClosures: with_tracers, DiffusivityFields, time_discretization, implicit_diffusion_solver
 using Oceananigans.LagrangianParticleTracking: LagrangianParticles
 using Oceananigans.Utils: tupleit
@@ -165,9 +165,13 @@ function NonhydrostaticModel(;    grid,
     model_fields = merge(velocities, tracers)
     forcing = model_forcing(model_fields; forcing...)
 
-    return NonhydrostaticModel(architecture, grid, clock, advection, buoyancy, coriolis, stokes_drift,
-                               forcing, closure, background_fields, particles, velocities, tracers,
-                               pressures, diffusivity_fields, timestepper, pressure_solver, immersed_boundary)
+    model = NonhydrostaticModel(architecture, grid, clock, advection, buoyancy, coriolis, stokes_drift,
+                                forcing, closure, background_fields, particles, velocities, tracers,
+                                pressures, diffusivity_fields, timestepper, pressure_solver, immersed_boundary)
+
+    update_state!(model)
+    
+    return model
 end
 
 #####

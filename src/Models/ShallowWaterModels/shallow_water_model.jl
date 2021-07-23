@@ -6,7 +6,7 @@ using Oceananigans.BoundaryConditions: regularize_field_boundary_conditions
 using Oceananigans.Fields: Field, tracernames, TracerFields, XFaceField, YFaceField, CenterField
 using Oceananigans.Forcings: model_forcing
 using Oceananigans.Grids: with_halo, topology, inflate_halo_size, halo_size, Flat
-using Oceananigans.TimeSteppers: Clock, TimeStepper
+using Oceananigans.TimeSteppers: Clock, TimeStepper, update_state!
 using Oceananigans.TurbulenceClosures: with_tracers, DiffusivityFields
 using Oceananigans.Utils: tupleit
 
@@ -127,17 +127,21 @@ function ShallowWaterModel(;
     forcing = model_forcing(model_fields; forcing...)
     closure = with_tracers(tracernames(tracers), closure)
 
-    return ShallowWaterModel(grid,
-                             architecture,
-                             clock,
-                             eltype(grid)(gravitational_acceleration),
-                             advection,
-                             coriolis,
-                             forcing,
-                             closure,
-                             bathymetry,
-                             solution,
-                             tracers,
-                             diffusivity_fields,
-                             timestepper)
+    model = ShallowWaterModel(grid,
+                              architecture,
+                              clock,
+                              eltype(grid)(gravitational_acceleration),
+                              advection,
+                              coriolis,
+                              forcing,
+                              closure,
+                              bathymetry,
+                              solution,
+                              tracers,
+                              diffusivity_fields,
+                              timestepper)
+
+    update_state!(model)
+
+    return model
 end

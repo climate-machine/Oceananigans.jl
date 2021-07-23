@@ -11,7 +11,7 @@ using Oceananigans.Fields: Field, CenterField, tracernames, VelocityFields, Trac
 using Oceananigans.Forcings: model_forcing
 using Oceananigans.Grids: inflate_halo_size, with_halo, AbstractRectilinearGrid, AbstractCurvilinearGrid, AbstractHorizontallyCurvilinearGrid
 using Oceananigans.Models.NonhydrostaticModels: extract_boundary_conditions
-using Oceananigans.TimeSteppers: Clock, TimeStepper
+using Oceananigans.TimeSteppers: Clock, TimeStepper, update_state!
 using Oceananigans.TurbulenceClosures: with_tracers, DiffusivityFields, add_closure_specific_boundary_conditions
 using Oceananigans.TurbulenceClosures: time_discretization, implicit_diffusion_solver
 using Oceananigans.LagrangianParticleTracking: LagrangianParticles
@@ -175,9 +175,13 @@ function HydrostaticFreeSurfaceModel(; grid,
 
     advection = merge((momentum=momentum_advection,), tracer_advection_tuple)
 
-    return HydrostaticFreeSurfaceModel(architecture, grid, clock, advection, buoyancy, coriolis,
-                                       free_surface, forcing, closure, particles, velocities, tracers,
-                                       pressure, diffusivity_fields, timestepper, auxiliary_fields)
+    model = HydrostaticFreeSurfaceModel(architecture, grid, clock, advection, buoyancy, coriolis,
+                                        free_surface, forcing, closure, particles, velocities, tracers,
+                                        pressure, diffusivity_fields, timestepper, auxiliary_fields)
+
+    update_state!(model)
+
+    return model
 end
 
 validate_velocity_boundary_conditions(velocities) = validate_vertical_velocity_boundary_conditions(velocities.w)
