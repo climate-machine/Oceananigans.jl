@@ -62,13 +62,6 @@ function test_thermal_bubble_checkpointer_output(arch)
     # Checkpoint should be saved as "checkpoint_iteration5.jld" after the 5th iteration.
     run!(checkpointed_simulation) # for 5 iterations
 
-    restored_model = restore_from_checkpoint("checkpoint_iteration5.jld2")
-
-    for n in 1:4
-        update_state!(restored_model)
-        time_step!(restored_model, Δt, euler=false) # time-step for 4 iterations
-    end
-
     #####
     ##### Test `set!(model, checkpoint_file)`
     #####
@@ -113,117 +106,6 @@ function test_thermal_bubble_checkpointer_output(arch)
     return nothing
 end
 
-function test_checkpoint_output_with_function_bcs(arch)
-    grid = RegularRectilinearGrid(size=(16, 16, 16), extent=(1, 1, 1))
-
-    @inline some_flux(x, y, t) = 2x + exp(y)
-    top_u_bc = top_T_bc = FluxBoundaryCondition(some_flux)
-    u_bcs = FieldBoundaryConditions(top=top_u_bc)
-    T_bcs = FieldBoundaryConditions(top=top_T_bc)
-
-    model = NonhydrostaticModel(architecture=arch, grid=grid, boundary_conditions=(u=u_bcs, T=T_bcs))
-    set!(model, u=π/2, v=ℯ, T=Base.MathConstants.γ, S=Base.MathConstants.φ)
-
-    checkpointer = Checkpointer(model, schedule=IterationInterval(1))
-    write_output!(checkpointer, model)
-    model = nothing
-
-    restored_model = restore_from_checkpoint("checkpoint_iteration0.jld2")
-    @test  ismissing(restored_model.velocities.u.boundary_conditions)
-    @test !ismissing(restored_model.velocities.v.boundary_conditions)
-    @test !ismissing(restored_model.velocities.w.boundary_conditions)
-    @test  ismissing(restored_model.tracers.T.boundary_conditions)
-    @test !ismissing(restored_model.tracers.S.boundary_conditions)
-
-    CUDA.@allowscalar begin
-        @test all(interior(restored_model.velocities.u) .≈ π/2)
-        @test all(interior(restored_model.velocities.v) .≈ ℯ)
-        @test all(interior(restored_model.velocities.w) .== 0)
-        @test all(interior(restored_model.tracers.T) .≈ Base.MathConstants.γ)
-        @test all(interior(restored_model.tracers.S) .≈ Base.MathConstants.φ)
-    end
-    restored_model = nothing
-
-    properly_restored_model = restore_from_checkpoint("checkpoint_iteration0.jld2",
-                                                      boundary_conditions=(u=u_bcs, T=T_bcs))
-
-    CUDA.@allowscalar begin
-        @test all(interior(properly_restored_model.velocities.u) .≈ π/2)
-        @test all(interior(properly_restored_model.velocities.v) .≈ ℯ)
-        @test all(interior(properly_restored_model.velocities.w) .== 0)
-        @test all(interior(properly_restored_model.tracers.T) .≈ Base.MathConstants.γ)
-        @test all(interior(properly_restored_model.tracers.S) .≈ Base.MathConstants.φ)
-    end
-
-    @test !ismissing(properly_restored_model.velocities.u.boundary_conditions)
-    @test !ismissing(properly_restored_model.velocities.v.boundary_conditions)
-    @test !ismissing(properly_restored_model.velocities.w.boundary_conditions)
-    @test !ismissing(properly_restored_model.tracers.T.boundary_conditions)
-    @test !ismissing(properly_restored_model.tracers.S.boundary_conditions)
-
-    u, v, w = properly_restored_model.velocities
-    T, S = properly_restored_model.tracers
-
-    @test u.boundary_conditions.west  isa PBC
-    @test u.boundary_conditions.east isa PBC
-    @test u.boundary_conditions.south  isa PBC
-    @test u.boundary_conditions.north isa PBC
-    @test u.boundary_conditions.bottom  isa ZFBC
-    @test u.boundary_conditions.top isa FBC
-    @test u.boundary_conditions.top.condition isa ContinuousBoundaryFunction
-    @test u.boundary_conditions.top.condition.func(1, 2, 3) == some_flux(1, 2, 3)
-
-    @test T.boundary_conditions.west  isa PBC
-    @test T.boundary_conditions.east isa PBC
-    @test T.boundary_conditions.south  isa PBC
-    @test T.boundary_conditions.north isa PBC
-    @test T.boundary_conditions.bottom  isa ZFBC
-    @test T.boundary_conditions.top isa FBC
-    @test T.boundary_conditions.top.condition isa ContinuousBoundaryFunction
-    @test T.boundary_conditions.top.condition.func(1, 2, 3) == some_flux(1, 2, 3)
-
-    # Test that the restored model can be time stepped
-    time_step!(properly_restored_model, 1)
-    @test properly_restored_model isa NonhydrostaticModel
-
-    return nothing
-end
-
-function run_cross_architecture_checkpointer_tests(arch1, arch2)
-    grid = RegularRectilinearGrid(size=(16, 16, 16), extent=(1, 1, 1))
-    model = NonhydrostaticModel(architecture=arch1, grid=grid)
-    set!(model, u=π/2, v=ℯ, T=Base.MathConstants.γ, S=Base.MathConstants.φ)
-
-    checkpointer = Checkpointer(model, schedule=IterationInterval(1))
-    write_output!(checkpointer, model)
-    model = nothing
-
-    restored_model = restore_from_checkpoint("checkpoint_iteration0.jld2", architecture=arch2)
-
-    @test restored_model.architecture == arch2
-
-    ArrayType = array_type(restored_model.architecture)
-    CUDA.@allowscalar begin
-        @test restored_model.velocities.u.data.parent isa ArrayType
-        @test restored_model.velocities.v.data.parent isa ArrayType
-        @test restored_model.velocities.w.data.parent isa ArrayType
-        @test restored_model.tracers.T.data.parent isa ArrayType
-        @test restored_model.tracers.S.data.parent isa ArrayType
-
-        @test all(interior(restored_model.velocities.u) .≈ π/2)
-        @test all(interior(restored_model.velocities.v) .≈ ℯ)
-        @test all(interior(restored_model.velocities.w) .== 0)
-        @test all(interior(restored_model.tracers.T) .≈ Base.MathConstants.γ)
-        @test all(interior(restored_model.tracers.S) .≈ Base.MathConstants.φ)
-    end
-
-    # Test that the restored model can be time stepped
-    time_step!(restored_model, 1)
-    @test restored_model isa NonhydrostaticModel
-
-    return nothing
-end
-
 function run_checkpointer_cleanup_tests(arch)
     grid = RegularRectilinearGrid(size=(1, 1, 1), extent=(1, 1, 1))
     model = NonhydrostaticModel(architecture=arch, grid=grid)
@@ -241,15 +123,7 @@ end
 for arch in archs
     @testset "Checkpointer [$(typeof(arch))]" begin
         @info "  Testing Checkpointer [$(typeof(arch))]..."
-
         test_thermal_bubble_checkpointer_output(arch)
-        test_checkpoint_output_with_function_bcs(arch)
-
-        if CUDA.has_cuda()
-            run_cross_architecture_checkpointer_tests(CPU(), GPU())
-            run_cross_architecture_checkpointer_tests(GPU(), CPU())
-        end
-
         run_checkpointer_cleanup_tests(arch)
     end
 end
