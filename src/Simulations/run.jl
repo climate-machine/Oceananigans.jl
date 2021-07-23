@@ -122,10 +122,12 @@ Possible values for `pickup` are:
 Note that `pickup=true` and `pickup=iteration` will fail if `simulation.output_writers` contains
 more than one checkpointer.
 """
-function run!(sim; pickup=false)
+function run!(sim; pickup=false, callbacks=[])
 
     model = sim.model
     clock = model.clock
+
+    add_callbacks!(sim, callbacks)
 
     if we_want_to_pickup(pickup)
         checkpointers = filter(writer -> writer isa Checkpointer, collect(values(sim.output_writers)))
@@ -157,6 +159,7 @@ function run!(sim; pickup=false)
         if clock.iteration == 0
             [run_diagnostic!(diag, sim.model) for diag in values(sim.diagnostics)]
             [write_output!(writer, sim.model) for writer in values(sim.output_writers)]
+            [callback(sim) for callback in values(sim.callbacks)]
         end
 
         # Ensure that the simulation doesn't iterate past `stop_iteration`.
@@ -177,8 +180,9 @@ function run!(sim; pickup=false)
             ab2_or_rk3_time_step!(model, Δt, euler=euler)
 
             # Run diagnostics, then write output
-            [  diag.schedule(model) && run_diagnostic!(diag, sim.model) for diag in values(sim.diagnostics)]
-            [writer.schedule(model) && write_output!(writer, sim.model) for writer in values(sim.output_writers)]
+            [  diag.schedule(model)   && run_diagnostic!(diag, sim.model) for diag in values(sim.diagnostics)]
+            [writer.schedule(model)   && write_output!(writer, sim.model) for writer in values(sim.output_writers)]
+            [callback.schedule(model) && callback(sim)                    for callback in values(sim.callbacks)]
         end
 
         sim.progress(sim)
