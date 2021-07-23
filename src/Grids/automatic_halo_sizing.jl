@@ -21,27 +21,33 @@ function required_halo_size end
 
 required_halo_size(nothing) = 1
 
-inflat_halo_size_one_dimension(H, Hx, TX          ) = max(H, Hx)
-inflat_halo_size_one_dimension(H, Hx, ::Type{Flat}) = 0
+inflate_halo_size_one_dimension(required_Hx, current_Hx, TX          ) = max(required_Hx, current_Hx)
+inflate_halo_size_one_dimension(required_Hx, current_Hx, ::Type{Flat}) = 0
+
+halo_size_string(Hx, TX) = "$Hx, "
+halo_size_string(Hx, ::Type{Flat}) = ""
+halo_size_string(H::Tuple, topo::Tuple) = "(" * prod(halo_size_str.(H, topo))[1:end-1] * ")"
 
 function inflate_halo_size(Hx, Hy, Hz, topology, tendency_terms...)
 
-    oldHx = Hx
-    oldHy = Hy
-    oldHz = Hz
+    old_halo = (Hx, Hy, Hz)
 
     for term in tendency_terms
-         H = required_halo_size(term)
-        Hx = inflat_halo_size_one_dimension(H, Hx, topology[1])
-        Hy = inflat_halo_size_one_dimension(H, Hy, topology[2])
-        Hz = inflat_halo_size_one_dimension(H, Hz, topology[3])
+        required_H = required_halo_size(term)
+        Hx = inflate_halo_size_one_dimension(required_H, Hx, topology[1])
+        Hy = inflate_halo_size_one_dimension(required_H, Hy, topology[2])
+        Hz = inflate_halo_size_one_dimension(required_H, Hz, topology[3])
     end
 
-    if Hx != oldHx || Hy != oldHy || Hz != oldHz
-        @warn "Inflating model grid halo size to ($Hx, $Hy, $Hz) and recreating grid. " *
+    new_halo = (Hx, Hy, Hz)
+    
+    if new_halo !== old_halo
+        halo_str = halo_size_string(new_halo, topology)
+        
+        @warn "Inflating model grid halo size to $halo_str and recreating grid. " *
         "The model grid will be different from the input grid. To avoid this warning, " *
-        "pass halo=($Hx, $Hy, $Hz) when constructing the grid."
+        "pass halo=$halo_str when constructing the grid."
     end
 
-    return Hx, Hy, Hz
+    return new_halo
 end
